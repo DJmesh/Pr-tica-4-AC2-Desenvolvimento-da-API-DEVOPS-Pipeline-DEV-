@@ -1,0 +1,61 @@
+-------------------------------------------------------------------------------
+Test set: br.com.valueprojects.subscription.vo.PlanTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 6, Skipped: 0, Time elapsed: 0.021 s <<< FAILURE! -- in br.com.valueprojects.subscription.vo.PlanTest
+br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanPremium -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanPremium(PlanTest.java:18)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
+	... 4 more
+
+br.com.valueprojects.subscription.vo.PlanTest.testToString -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testToString(PlanTest.java:49)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	... 4 more
+
+br.com.valueprojects.subscription.vo.PlanTest.testShouldUpdate -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testShouldUpdate(PlanTest.java:31)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	... 4 more
+
+br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanExactly12 -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanExactly12(PlanTest.java:25)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	... 4 more
+
+br.com.valueprojects.subscription.vo.PlanTest.testEqualsAndHashCode -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testEqualsAndHashCode(PlanTest.java:38)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	... 4 more
+
+br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanBasic -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/vo/Plan
+	at br.com.valueprojects.subscription.vo.PlanTest.testDeterminePlanBasic(PlanTest.java:11)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.vo.Plan
+	... 4 more
+

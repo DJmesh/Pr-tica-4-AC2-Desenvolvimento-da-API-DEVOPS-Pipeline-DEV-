@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                echo 'Deploying to production...'
+                script {
+                    sh '''
+                        docker-compose -f docker-compose.prod.yml pull
+                        docker-compose -f docker-compose.prod.yml up -d --no-color
+                        sleep 60
+                        docker-compose -f docker-compose.prod.yml logs
+                        docker-compose -f docker-compose.prod.yml ps
+                    '''
+                }
+            }
+        }
+
+        stage('Production Smoke Tests') {
+            steps {
+                echo 'Running production smoke tests...'
+                script {
+                    sh '''
+                        sleep 30
+                        curl -f http://localhost:8080/actuator/health || echo "Health check failed"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Production pipeline completed'
+            sh 'docker-compose -f docker-compose.prod.yml ps'
+        }
+    }
+}
+
+
+

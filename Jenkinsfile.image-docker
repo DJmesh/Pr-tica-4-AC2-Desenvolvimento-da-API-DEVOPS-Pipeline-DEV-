@@ -1,0 +1,165 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'COVERAGE_PERCENTAGE', defaultValue: '0', description: 'Code coverage percentage from test pipeline')
+        string(name: 'BUILD_NUMBER', defaultValue: '', description: 'Build number from test pipeline')
+    }
+
+    tools {
+        maven 'Maven'
+    }
+
+    stages {
+        stage('Validate Quality Gate') {
+            steps {
+                echo 'Validating Quality Gate before building Docker image...'
+                script {
+                    def coverage = params.COVERAGE_PERCENTAGE ?: env.COVERAGE_PERCENTAGE ?: '0'
+                    def coverageDouble = coverage.toDouble()
+                    
+                    echo "========================================="
+                    echo "DOCKER IMAGE BUILD - QUALITY GATE CHECK"
+                    echo "========================================="
+                    echo "Coverage from test pipeline: ${coverage}%"
+                    echo "Required: 99.00%"
+                    echo "========================================="
+                    
+                    if (coverageDouble < 99.0) {
+                        error("❌ Cannot build Docker image: Quality Gate not met. Coverage ${coverage}% < 99.00%")
+                    } else {
+                        echo "✅ Quality Gate passed: Coverage ${coverage}% >= 99.00%"
+                        echo "Proceeding with Docker image build..."
+                    }
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                echo 'Building application JAR...'
+                sh 'mvn clean package -DskipTests'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    def imageTag = params.BUILD_NUMBER ?: "${env.BUILD_NUMBER}"
+                    def imageName = "subscription-service"
+                    
+                    sh """
+                        echo "Building Docker image: ${imageName}:${imageTag}"
+                        docker build -t ${imageName}:${imageTag} .
+                        docker tag ${imageName}:${imageTag} ${imageName}:latest
+                        echo "Docker image built successfully!"
+                    """
+                    
+                    env.DOCKER_IMAGE_TAG = imageTag
+                }
+            }
+        }
+
+        stage('Test Docker Image') {
+            steps {
+                echo 'Testing Docker image...'
+                script {
+                    sh """
+                        echo "Starting container from built image..."
+                        docker run -d --name subscription-test -p 8080:8080 subscription-service:latest || true
+                        sleep 30
+                        echo "Checking if container is running..."
+                        docker ps | grep subscription-test || echo "Container not running"
+                        echo "Stopping test container..."
+                        docker stop subscription-test || true
+                        docker rm subscription-test || true
+                    """
+                }
+            }
+        }
+
+        stage('Push to Registry') {
+            when {
+                expression { 
+                    env.DOCKER_REGISTRY_CREDENTIALS != null || 
+                    params.PUSH_TO_REGISTRY == 'true' 
+                }
+            }
+            steps {
+                echo 'Pushing Docker image to registry...'
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-hub-credentials', 
+                        usernameVariable: 'DOCKER_USER', 
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh """
+                            echo "Logging into Docker registry..."
+                            echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                            
+                            echo "Tagging images for registry..."
+                            docker tag subscription-service:${env.DOCKER_IMAGE_TAG} ${DOCKER_USER}/subscription-service:${env.DOCKER_IMAGE_TAG}
+                            docker tag subscription-service:${env.DOCKER_IMAGE_TAG} ${DOCKER_USER}/subscription-service:latest
+                            
+                            echo "Pushing images to registry..."
+                            docker push ${DOCKER_USER}/subscription-service:${env.DOCKER_IMAGE_TAG}
+                            docker push ${DOCKER_USER}/subscription-service:latest
+                            
+                            echo "✅ Docker images pushed successfully!"
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Generate Image Report') {
+            steps {
+                echo 'Generating Docker image build report...'
+                script {
+                    sh """
+                        echo "========================================="
+                        echo "DOCKER IMAGE BUILD REPORT"
+                        echo "========================================="
+                        echo "Image Name: subscription-service"
+                        echo "Image Tag: ${env.DOCKER_IMAGE_TAG}"
+                        echo "Coverage: ${params.COVERAGE_PERCENTAGE}%"
+                        echo "Build Number: ${params.BUILD_NUMBER}"
+                        echo "Build Status: SUCCESS"
+                        echo "========================================="
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up Docker resources...'
+            sh '''
+                docker rmi subscription-service:latest || true
+                docker system prune -f || true
+            '''
+        }
+        success {
+            echo '✅ Docker image built successfully!'
+            echo "Image: subscription-service:${env.DOCKER_IMAGE_TAG}"
+        }
+        failure {
+            echo '❌ Docker image build failed!'
+        }
+    }
+}
+

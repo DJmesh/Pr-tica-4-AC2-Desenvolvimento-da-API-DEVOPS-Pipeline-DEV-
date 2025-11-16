@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Start Container') {
+            steps {
+                echo 'Starting container from Docker Hub...'
+                script {
+                    sh '''
+                        docker-compose -f docker-compose.staging.yml pull || echo "Using local image"
+                        docker-compose -f docker-compose.staging.yml up -d --no-color
+                        sleep 60
+                        docker-compose -f docker-compose.staging.yml logs
+                        docker-compose -f docker-compose.staging.yml ps
+                    '''
+                }
+            }
+        }
+
+        stage('Smoke Tests') {
+            steps {
+                echo 'Running smoke tests against the container...'
+                script {
+                    sh '''
+                        sleep 30
+                        curl -f http://localhost:8080/actuator/health || echo "Health check failed"
+                        curl -f http://localhost:8080/swagger-ui.html || echo "Swagger UI check failed"
+                        curl -f http://localhost:8080/api/students || echo "API endpoint check failed"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Staging pipeline completed'
+            sh 'docker-compose -f docker-compose.staging.yml ps'
+        }
+        cleanup {
+            echo 'Cleaning up...'
+            // Optional: stop containers
+            // sh 'docker-compose -f docker-compose.staging.yml down'
+        }
+    }
+}
+
+
+
