@@ -1,51 +1,131 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_USER = 'djmesh_dockerhub'
-        IMAGE_NAME     = 'subscription-service'
-        IMAGE_TAG      = "${env.BUILD_NUMBER}"
+    tools {
+        maven 'Maven'
+        jdk   'JDK17'
+    }
+
+    parameters {
+        string(
+            name: 'GIT_COMMIT',
+            defaultValue: '',
+            description: 'Commit que originou a build de testes'
+        )
+        booleanParam(
+            name: 'QUALITY_GATE_PASSED',
+            defaultValue: false,
+            description: 'Definido pelo pipeline de testes quando Jacoco >= 99%'
+        )
     }
 
     stages {
-        stage('Pre-Build') {
-            steps {
-                echo 'Verificando Docker e limpando imagens antigas'
-                sh 'docker --version || echo "Docker não encontrado"'
-            }
-        }
 
-        stage('Build Image') {
+        stage('Validate Quality Gate') {
             steps {
-                echo "Construindo imagem ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
-            }
-        }
-
-        stage('Push Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                echo 'Validando Quality Gate antes de construir a imagem Docker...'
+                script {
+                    echo """
+=========================================
+DOCKER IMAGE BUILD - QUALITY GATE CHECK
+=========================================
+QUALITY_GATE_PASSED = ${params.QUALITY_GATE_PASSED}
+GIT_COMMIT          = ${params.GIT_COMMIT}
+=========================================
+"""
+                    if (!params.QUALITY_GATE_PASSED) {
+                        error '❌ Quality Gate NÃO aprovado. Não é permitido gerar imagem Docker.'
+                    }
                 }
             }
         }
 
-        stage('Trigger Staging') {
+        stage('Checkout') {
             steps {
-                echo 'Disparando Pipeline_Staging...'
-                build job: 'Pipeline_Staging', wait: false
+                echo 'Fazendo checkout do código...'
+                checkout scm
+            }
+        }
+
+        stage('Build Application Jar') {
+            steps {
+                echo 'Construindo JAR (mvn clean package -DskipTests)...'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    if command -v docker >/dev/null 2>&1; then
+                      echo "Construindo imagem Docker subscription-service:latest..."
+                      docker build -t subscription-service:latest .
+                    else
+                      echo "Docker não encontrado. Simulando build de imagem (nenhuma imagem real será criada)."
+                    fi
+                '''
+            }
+        }
+
+        stage('Test Docker Image (Smoke Test)') {
+            steps {
+                sh '''
+                    if command -v docker >/dev/null 2>&1; then
+                      echo "Subindo container para health-check..."
+                      docker run --rm -d --name subscription-service-test -p 8080:8080 subscription-service:latest
+                      echo "Aguardando aplicação subir..."
+                      sleep 15
+                      echo "Chamando /actuator/health..."
+                      curl -f http://localhost:8080/actuator/health || (echo "Health check falhou" && exit 1)
+                      echo "Parando container de teste..."
+                      docker stop subscription-service-test || true
+                    else
+                      echo "Docker não encontrado. Pulando teste real de container."
+                    fi
+                '''
+            }
+        }
+
+        stage('Generate Image Report') {
+            steps {
+                echo '''
+Relatório da imagem Docker:
+ - Verifique os logs desta build para acompanhar o processo de build/teste
+ - Em ambiente real, você poderia rodar `docker history subscription-service:latest`
+   e publicar esse output como artefato ou HTML.
+'''
+            }
+        }
+
+        stage('Push to Registry (opcional/academico)') {
+            when {
+                expression { return false } // Desativado para atividade acadêmica
+            }
+            steps {
+                echo 'Aqui entraria o push para um registry (Docker Hub, ECR, etc.).'
             }
         }
     }
 
     post {
         always {
-            echo "Pipeline Image_Docker finalizado"
+            echo 'Limpando recursos Docker (se existirem)...'
+            sh '''
+                if command -v docker >/dev/null 2>&1; then
+                  docker stop subscription-service-test 2>/dev/null || true
+                  docker rm   subscription-service-test 2>/dev/null || true
+                  # Remova a linha abaixo se quiser manter a imagem local
+                  # docker rmi subscription-service:latest 2>/dev/null || true
+                else
+                  echo "Docker não encontrado. Nada para limpar."
+                fi
+            '''
+        }
+        success {
+            echo '✅ Pipeline de imagem Docker finalizado com sucesso!'
+        }
+        failure {
+            echo '❌ Falha ao gerar/testar imagem Docker!'
         }
     }
 }

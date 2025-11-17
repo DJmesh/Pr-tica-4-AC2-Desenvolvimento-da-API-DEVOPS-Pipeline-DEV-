@@ -1,88 +1,61 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven'
-        jdk 'JDK17'
-    }
-
     stages {
-        stage('Checkout') {
+
+        stage('Run Test Pipeline') {
             steps {
                 echo '========================================'
-                echo 'PIPELINE DEV - MAIN'
+                echo 'PIPELINE DEV - ORCHESTRAÇÃO'
                 echo '========================================'
-                echo 'Checking out source code...'
-                checkout scm
+                echo 'Executando pipeline: subscription-service-test-dev...'
+                // Se esse job falhar (teste ou Jacoco < 99%), esta stage falha e o restante não roda
+                build job: 'subscription-service-test-dev',
+                      wait: true,
+                      propagate: true
             }
         }
 
-        stage('Trigger Test Pipeline') {
+        stage('Run Docker Image Pipeline') {
             steps {
-                echo 'Triggering sub-pipeline: Pipeline-test-dev...'
-                script {
-                    def testPipeline = build job: 'subscription-service-test-dev', wait: true, propagate: true
-                    env.TEST_PIPELINE_BUILD_NUMBER = "${testPipeline.number}"
-                    env.TEST_PIPELINE_RESULT = "${testPipeline.result}"
-                    
-                    echo "Test Pipeline Build #${env.TEST_PIPELINE_BUILD_NUMBER} completed with result: ${env.TEST_PIPELINE_RESULT}"
-                    
-                    if (env.TEST_PIPELINE_RESULT != 'SUCCESS') {
-                        error("Test pipeline failed or unstable. Cannot proceed.")
-                    }
-                }
+                echo 'Disparando pipeline: subscription-service-image-docker...'
+                build job: 'subscription-service-image-docker',
+                      parameters: [
+                        string(name: 'GIT_COMMIT', value: ''),
+                        booleanParam(name: 'QUALITY_GATE_PASSED', value: true)
+                      ],
+                      wait: true,
+                      propagate: true
             }
         }
 
-        stage('Quality Gate Validation') {
+        stage('Summary') {
             steps {
-                echo 'Validating Quality Gate from test pipeline...'
-                script {
-                    // This stage validates that the test pipeline passed Quality Gate
-                    // The actual Quality Gate check happens in Pipeline-test-dev
-                    echo "✅ Quality Gate validated: Test pipeline passed with 99%+ coverage"
-                }
-            }
-        }
+                echo '''
+Pipeline DEV finalizada.
 
-        stage('Package Application') {
-            steps {
-                echo 'Packaging application...'
-                sh 'mvn clean package -DskipTests'
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-                }
+Sub-pipelines executados:
+ - subscription-service-test-dev:
+     * Pre-Build, Build, Test (JUnit + Cucumber)
+     * Relatórios: JUnit, JaCoCo, PMD
+     * Quality Gate Jacoco >= 99%
+ - subscription-service-image-docker:
+     * Build jar
+     * (Simulação) build/test/push da imagem Docker
+
+Os relatórios detalhados estão disponíveis nas builds dos sub-pipelines.
+Use o navegador (Imprimir → Salvar como PDF) para gerar o documento solicitado na atividade.
+'''
             }
         }
     }
 
     post {
-        always {
-            echo '========================================'
-            echo 'PIPELINE DEV COMPLETED'
-            echo '========================================'
-            echo "Test Pipeline Build: #${env.TEST_PIPELINE_BUILD_NUMBER}"
-            echo "Result: ${env.TEST_PIPELINE_RESULT}"
-            
-            // Archive all reports
-            archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
-            
-            publishHTML([
-                reportDir: 'target/site/jacoco',
-                reportFiles: 'index.html',
-                reportName: 'JaCoCo Coverage Report'
-            ])
-        }
         success {
-            echo '✅ Pipeline DEV completed successfully!'
-            echo 'Docker image build will be triggered automatically by test pipeline if Quality Gate passed.'
+            echo '✅ Pipeline DEV SUCCESS!'
         }
         failure {
-            echo '❌ Pipeline DEV failed!'
+            echo '❌ Pipeline DEV failed. Check sub-pipeline logs.'
         }
     }
 }
-
-
