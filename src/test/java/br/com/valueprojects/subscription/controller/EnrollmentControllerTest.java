@@ -80,6 +80,19 @@ class EnrollmentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accepted").value(true));
     }
+
+    @Test
+    void testEnrollWithNullVoucher() throws Exception {
+        enrollmentDTO.setUsingVoucher(null);
+        EnrollmentResultDTO result = EnrollmentResultDTO.accepted("ML-101");
+        when(enrollmentService.enroll(anyLong(), anyString(), eq(false))).thenReturn(result);
+
+        mockMvc.perform(post("/api/enrollments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(enrollmentDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accepted").value(true));
+    }
 }
 
 

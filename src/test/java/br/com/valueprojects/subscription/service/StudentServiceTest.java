@@ -145,6 +145,26 @@ class StudentServiceTest {
             studentService.deleteStudent(1L);
         });
     }
+
+    @Test
+    void testFindStudentEntityById() {
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+
+        Student result = studentService.findStudentEntityById(1L);
+
+        assertNotNull(result);
+        assertEquals("Test Student", result.getName());
+        verify(studentRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void testFindStudentEntityByIdNotFound() {
+        when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> {
+            studentService.findStudentEntityById(1L);
+        });
+    }
 }
 
 
