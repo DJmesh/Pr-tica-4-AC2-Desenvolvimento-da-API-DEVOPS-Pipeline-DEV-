@@ -2,171 +2,122 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven'
-        jdk 'JDK17'
+        maven 'Maven'      // nome cadastrado em Manage Jenkins → Global Tool Configuration
+        jdk   'JDK21'      // idem
+    }
+
+    environment {
+        APP_NAME            = 'subscription-service'
+        JACOCO_MIN_COVERAGE = '0.99'   // usado no pom.xml (quality gate)
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
         stage('Pre-Build') {
             steps {
-                echo 'Pre-Build: Cleaning workspace and preparing environment...'
-                sh '''
-                    echo "Maven Version:"
-                    mvn --version
-                    echo "Java Version:"
-                    java -version
-                    mvn clean
-                '''
+                echo "Pre-Build: Cleaning workspace and preparing environment..."
+                sh 'mvn --version'
+                sh 'java -version'
+                sh 'mvn clean'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Build: Compiling source code...'
+                echo "Build: Compiling source code..."
                 sh 'mvn compile -DskipTests'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running all tests (JUnit)...'
+                echo "Running all tests (JUnit)..."
                 sh 'mvn test'
             }
             post {
                 always {
-                    echo 'Publishing test results...'
+                    echo 'Publicando resultados JUnit...'
                     junit 'target/surefire-reports/*.xml'
-                    // REMOVIDO: publishTestResults
                 }
             }
         }
 
         stage('Code Quality Analysis') {
             parallel {
+
                 stage('JaCoCo Coverage') {
                     steps {
-                        echo 'Generating JaCoCo code coverage report...'
+                        echo "Generating JaCoCo code coverage report..."
+                        // verify roda testes + jacoco:report + jacoco:check
                         sh 'mvn verify'
                     }
                     post {
                         always {
                             echo 'Publishing JaCoCo coverage report...'
-                            publishHTML([
-                                reportDir: 'target/site/jacoco',
-                                reportFiles: 'index.html',
-                                reportName: 'JaCoCo Coverage Report',
-                                allowMissing: false,
-                                keepAll: true
+                            publishHTML(target: [
+                                reportName           : 'JaCoCo Coverage Report',
+                                reportDir            : 'target/site/jacoco',
+                                reportFiles          : 'index.html',
+                                keepAll              : true,
+                                alwaysLinkToLastBuild: true,
+                                allowMissing         : true
                             ])
-                            // Archive coverage report
-                            archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
                         }
                     }
                 }
 
                 stage('PMD Analysis') {
                     steps {
-                        echo 'Running PMD static code analysis...'
-                        sh 'mvn pmd:pmd pmd:check || true'
+                        echo "Running PMD static code analysis..."
+                        sh 'mvn pmd:pmd pmd:check'
                     }
                     post {
                         always {
                             echo 'Publishing PMD results...'
-                            step([
-                                $class: 'PublishPMDResults',
-                                reportPattern: 'target/pmd/pmd.xml',
-                                healthLimits: [
-                                    [limit: 'HIGH',   unstable: 0],
-                                    [limit: 'NORMAL', unstable: 5],
-                                    [limit: 'LOW',    unstable: 10]
-                                ]
+                            // opção simples com HTML:
+                            publishHTML(target: [
+                                reportName           : 'PMD Report',
+                                reportDir            : 'target/site',
+                                reportFiles          : 'pmd.html',
+                                keepAll              : true,
+                                alwaysLinkToLastBuild: true,
+                                allowMissing         : true
                             ])
-                            // Publish PMD HTML report
-                            publishHTML([
-                                reportDir: 'target/pmd',
-                                reportFiles: 'pmd.html',
-                                reportName: 'PMD Report',
-                                allowMissing: true,
-                                keepAll: true
-                            ])
-                            // Archive PMD artifacts
-                            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
+
+                            // se tiver Warnings NG instalado, você pode adicionar:
+                            // recordIssues enabledForFailure: true,
+                            //              tools: [pmdParser(pattern: 'target/pmd/pmd.xml')]
                         }
                     }
                 }
             }
         }
 
-        stage('Quality Gate - Coverage Check') {
+        stage('Quality Gate - Coverage >= 99%') {
             steps {
-                echo 'Checking Quality Gate: 99% coverage required...'
                 script {
-                    // Wait for JaCoCo report to be generated
-                    sleep(time: 2, unit: 'SECONDS')
-                    
-                    // Read JaCoCo XML report
-                    def jacocoReportFile = 'target/site/jacoco/jacoco.xml'
-                    if (!fileExists(jacocoReportFile)) {
-                        error("❌ JaCoCo report not found at ${jacocoReportFile}. Please check if tests ran successfully.")
-                    }
-                    
-                    def jacocoReport = readFile(jacocoReportFile)
-                    def parser = new XmlSlurper().parseText(jacocoReport)
-                    
-                    // Calculate coverage from JaCoCo XML - use BUNDLE level
-                    def report = parser.report
-                    def counter = report.counter.find { 
-                        it.@type == 'LINE'
-                    }
-                    
-                    if (counter == null) {
-                        // Try alternative path
-                        counter = parser.counter.find { 
-                            it.@type == 'LINE'
-                        }
-                    }
-                    
-                    if (counter == null) {
-                        error("❌ Could not find LINE counter in JaCoCo report")
-                    }
-                    
-                    def missed = (counter.@missed.text().toInteger())
-                    def covered = (counter.@covered.text().toInteger())
-                    def total = missed + covered
-                    
-                    def coverage = total > 0 ? (covered / total * 100) : 0
-                    
-                    echo "========================================="
-                    echo "QUALITY GATE - COVERAGE REPORT"
-                    echo "========================================="
-                    echo "Lines Covered: ${covered}"
-                    echo "Lines Missed: ${missed}"
-                    echo "Total Lines: ${total}"
-                    echo "Coverage: ${String.format("%.2f", coverage)}%"
-                    echo "Required: 99.00%"
-                    echo "========================================="
-                    
-                    // Set environment variable for other pipelines
-                    env.COVERAGE_PERCENTAGE = String.format("%.2f", coverage)
-                    env.COVERAGE_COVERED = "${covered}"
-                    env.COVERAGE_MISSED = "${missed}"
-                    env.COVERAGE_TOTAL = "${total}"
-                    
-                    if (coverage < 99.0) {
-                        currentBuild.result = 'UNSTABLE'
-                        error("❌ QUALITY GATE FAILED: Coverage ${String.format("%.2f", coverage)}% is below required 99.00%")
-                    } else {
-                        echo "✅ QUALITY GATE PASSED: Coverage ${String.format("%.2f", coverage)}% >= 99.00%"
-                        currentBuild.result = 'SUCCESS'
-                    }
+                    echo "Quality Gate: validando Jacoco >= 99% (configurado no pom.xml)"
+                    // A validação real está no jacoco:check dentro do mvn verify
+                    // Se cobertura < 99%, o mvn verify falha e o pipeline já teria quebrado
                 }
+            }
+        }
+
+        stage('Trigger Docker Image Pipeline') {
+            steps {
+                echo 'Quality Gate aprovado. Disparando pipeline de imagem Docker...'
+                // Nome do outro job/pipeline que só constrói a imagem
+                build job: 'subscription-service-image-docker',
+                      parameters: [
+                        string(name: 'GIT_COMMIT', value: env.GIT_COMMIT ?: '')
+                      ],
+                      wait: false
             }
         }
     }
@@ -174,53 +125,13 @@ pipeline {
     post {
         always {
             echo 'Post-Build: Archiving artifacts and reports...'
-            
-            // Archive JAR
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
-            
-            // Archive JaCoCo reports
-            archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
-            
-            // Archive JUnit reports
-            archiveArtifacts artifacts: 'target/surefire-reports/**/*', allowEmptyArchive: true
-            
-            // Archive PMD reports
-            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
-            
-            // Archive all site reports
-            archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
-            
-            // Publish summary
-            script {
-                echo "========================================="
-                echo "POST-BUILD SUMMARY"
-                echo "========================================="
-                echo "Coverage: ${env.COVERAGE_PERCENTAGE ?: 'N/A'}%"
-                echo "Lines Covered: ${env.COVERAGE_COVERED ?: 'N/A'}"
-                echo "Lines Missed: ${env.COVERAGE_MISSED ?: 'N/A'}"
-                echo "Total Lines: ${env.COVERAGE_TOTAL ?: 'N/A'}"
-                echo "========================================="
-            }
+            archiveArtifacts artifacts: 'target/**/*.jar', fingerprint: true
         }
         success {
-            echo '✅ Pipeline-test-dev completed successfully!'
-            echo "Coverage: ${env.COVERAGE_PERCENTAGE}%"
-            script {
-                if (env.COVERAGE_PERCENTAGE != null && (env.COVERAGE_PERCENTAGE as Double) >= 99.0) {
-                    echo 'Triggering Docker image build pipeline...'
-                    build job: 'subscription-service-image-docker', wait: false, parameters: [
-                        string(name: 'COVERAGE_PERCENTAGE', value: env.COVERAGE_PERCENTAGE),
-                        string(name: 'BUILD_NUMBER', value: env.BUILD_NUMBER)
-                    ]
-                }
-            }
+            echo '✅ Pipeline-test-dev SUCCESS!'
         }
         failure {
             echo '❌ Pipeline-test-dev failed!'
         }
-        unstable {
-            echo '⚠️ Pipeline-test-dev unstable (Quality Gate failed)!'
-        }
     }
 }
-
