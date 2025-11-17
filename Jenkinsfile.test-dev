@@ -43,7 +43,7 @@ pipeline {
                 always {
                     echo 'Publishing test results...'
                     junit 'target/surefire-reports/*.xml'
-                    publishTestResults testResultsPattern: 'target/surefire-reports/*.xml'
+                    // REMOVIDO: publishTestResults
                 }
             }
         }
