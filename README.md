@@ -61,27 +61,7 @@ src/main/java/br/com/valueprojects/subscription/
 
 ## 🔧 Configuração
 
-### ⚡ Setup Rápido (Recomendado)
-
-**IMPORTANTE**: Execute o script de setup primeiro para configurar tudo automaticamente:
-
-```bash
-# Dar permissão de execução
-chmod +x setup-local.sh
-
-# Executar setup
-./setup-local.sh
-```
-
-Este script irá:
-- ✅ Verificar e instalar dependências (Java, Maven, Docker, etc.)
-- ✅ Baixar dependências do Maven
-- ✅ Compilar o projeto
-- ✅ Executar todos os testes
-- ✅ Gerar relatórios de qualidade (JaCoCo, PMD)
-- ✅ Verificar configuração do Docker
-
-### Desenvolvimento Local (Manual)
+### Desenvolvimento Local
 
 1. Clone o repositório:
 ```bash

@@ -121,4 +121,71 @@ class ConvertCoinsDTOTest {
         ConvertCoinsDTO dto = builder.build();
         assertEquals(40, dto.getCoinsToConvert());
     }
+
+    @Test
+    void settersDevemFuncionarPerfeitamente() {
+        ConvertCoinsDTO dto = new ConvertCoinsDTO();
+        
+        dto.setStudentId(3L);
+        dto.setCoinsToConvert(25);
+        
+        assertEquals(3L, dto.getStudentId());
+        assertEquals(25, dto.getCoinsToConvert());
+    }
+
+    @Test
+    void toStringDeveConterValores() {
+        ConvertCoinsDTO dto = new ConvertCoinsDTO(1L, 15);
+        String str = dto.toString();
+        
+        assertNotNull(str);
+        assertTrue(str.contains("studentId=1"));
+        assertTrue(str.contains("coinsToConvert=15"));
+    }
+
+    @Test
+    void hashCodeDeveSerConsistente() {
+        ConvertCoinsDTO dto1 = ConvertCoinsDTO.builder().studentId(1L).coinsToConvert(10).build();
+        ConvertCoinsDTO dto2 = ConvertCoinsDTO.builder().studentId(1L).coinsToConvert(10).build();
+        
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+
+    @Test
+    void dtoComTodosOsCamposNullDeveSerValido() {
+        ConvertCoinsDTO dto = new ConvertCoinsDTO();
+        
+        assertNull(dto.getStudentId());
+        assertNull(dto.getCoinsToConvert());
+    }
+
+    @Test
+    void nullVsNonNullCoinsDeveFuncionar() {
+        ConvertCoinsDTO thisCoinsNull = ConvertCoinsDTO.builder()
+                .studentId(1L).coinsToConvert(null).build();
+        ConvertCoinsDTO otherCoinsNaoNull = ConvertCoinsDTO.builder()
+                .studentId(1L).coinsToConvert(10).build();
+        assertNotEquals(thisCoinsNull, otherCoinsNaoNull);
+        assertNotEquals(otherCoinsNaoNull, thisCoinsNull);
+    }
+
+    @Test
+    void nullVsNonNullStudentIdDeveFuncionar() {
+        ConvertCoinsDTO thisStudentNull = ConvertCoinsDTO.builder()
+                .studentId(null).coinsToConvert(10).build();
+        ConvertCoinsDTO otherStudentNaoNull = ConvertCoinsDTO.builder()
+                .studentId(1L).coinsToConvert(10).build();
+        assertNotEquals(thisStudentNull, otherStudentNaoNull);
+        assertNotEquals(otherStudentNaoNull, thisStudentNull);
+    }
+
+    @Test
+    void canEqualFalseDeveFazerEqualsRetornarFalso() {
+        ConvertCoinsDTO real = new ConvertCoinsDTO(1L, 20);
+        ConvertCoinsDTOFake fake = new ConvertCoinsDTOFake();
+        fake.setStudentId(1L);
+        fake.setCoinsToConvert(20);
+        
+        assertFalse(real.equals(fake));
+    }
 }

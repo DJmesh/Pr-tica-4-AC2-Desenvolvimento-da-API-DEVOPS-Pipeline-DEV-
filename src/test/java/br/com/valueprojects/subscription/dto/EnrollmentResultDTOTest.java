@@ -17,33 +17,27 @@ class EnrollmentResultDTOTest {
     void acceptedFactoryDevePreencherAcceptedTrueECode() {
         EnrollmentResultDTO dto = EnrollmentResultDTO.accepted("ML-101");
 
-        assertAll(
-                () -> assertTrue(dto.getAccepted()),
-                () -> assertEquals("ML-101", dto.getCode()),
-                () -> assertNull(dto.getReason())
-        );
+        assertTrue(dto.getAccepted());
+        assertEquals("ML-101", dto.getCode());
+        assertNull(dto.getReason());
     }
 
     @Test
     void rejectedFactoryDevePreencherAcceptedFalseEReason() {
         EnrollmentResultDTO dto = EnrollmentResultDTO.rejected("INSUFFICIENT_CREDIT");
 
-        assertAll(
-                () -> assertFalse(dto.getAccepted()),
-                () -> assertNull(dto.getCode()),
-                () -> assertEquals("INSUFFICIENT_CREDIT", dto.getReason())
-        );
+        assertFalse(dto.getAccepted());
+        assertNull(dto.getCode());
+        assertEquals("INSUFFICIENT_CREDIT", dto.getReason());
     }
 
     @Test
     void construtorAllArgsEGettersSettersDevemFuncionar() {
         EnrollmentResultDTO dto = new EnrollmentResultDTO(true, "ML-101", null);
 
-        assertAll(
-                () -> assertTrue(dto.getAccepted()),
-                () -> assertEquals("ML-101", dto.getCode()),
-                () -> assertNull(dto.getReason())
-        );
+        assertTrue(dto.getAccepted());
+        assertEquals("ML-101", dto.getCode());
+        assertNull(dto.getReason());
 
         dto.setReason("MOTIVO");
         assertEquals("MOTIVO", dto.getReason());
@@ -143,5 +137,97 @@ class EnrollmentResultDTOTest {
 
         EnrollmentResultDTO dto = builder.build();
         assertEquals("ML-201", dto.getCode());
+    }
+
+    @Test
+    void settersDevemFuncionarPerfeitamente() {
+        EnrollmentResultDTO dto = new EnrollmentResultDTO();
+        
+        dto.setAccepted(true);
+        dto.setCode("TEST");
+        dto.setReason("REASON");
+        
+        assertTrue(dto.getAccepted());
+        assertEquals("TEST", dto.getCode());
+        assertEquals("REASON", dto.getReason());
+    }
+
+    @Test
+    void toStringDeveConterValores() {
+        EnrollmentResultDTO dto = EnrollmentResultDTO.accepted("ML-101");
+        String str = dto.toString();
+        
+        assertNotNull(str);
+        assertTrue(str.contains("accepted=true"));
+        assertTrue(str.contains("ML-101"));
+    }
+
+    @Test
+    void hashCodeDeveSerConsistente() {
+        EnrollmentResultDTO dto1 = EnrollmentResultDTO.accepted("ML-101");
+        EnrollmentResultDTO dto2 = EnrollmentResultDTO.accepted("ML-101");
+        
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+
+    @Test
+    void dtoComTodosOsCamposNullDeveSerValido() {
+        EnrollmentResultDTO dto = new EnrollmentResultDTO();
+        dto.setAccepted(null);
+        dto.setCode(null);
+        dto.setReason(null);
+        
+        assertNull(dto.getAccepted());
+        assertNull(dto.getCode());
+        assertNull(dto.getReason());
+    }
+
+    @Test
+    void rejectedFactoryComNullDeveRetornarNulls() {
+        EnrollmentResultDTO dto = EnrollmentResultDTO.rejected(null);
+        
+        assertFalse(dto.getAccepted());
+        assertNull(dto.getCode());
+        assertNull(dto.getReason());
+    }
+
+    @Test
+    void acceptedFactoryComNullDeveRetornarNulls() {
+        EnrollmentResultDTO dto = EnrollmentResultDTO.accepted(null);
+        
+        assertTrue(dto.getAccepted());
+        assertNull(dto.getCode());
+        assertNull(dto.getReason());
+    }
+
+    @Test
+    void canEqualFalseDeveFazerEqualsRetornarFalso() {
+        EnrollmentResultDTO real = EnrollmentResultDTO.accepted("ML-101");
+        EnrollmentResultDTOFake fake = new EnrollmentResultDTOFake();
+        fake.setAccepted(true);
+        fake.setCode("ML-101");
+        fake.setReason(null);
+        
+        assertFalse(real.equals(fake));
+    }
+
+    @Test
+    void nullVsNonNullReasonDeveFuncionar() {
+        EnrollmentResultDTO thisReasonNull = EnrollmentResultDTO.builder()
+                .accepted(false).code(null).reason(null).build();
+        EnrollmentResultDTO otherReasonNaoNull = EnrollmentResultDTO.builder()
+                .accepted(false).code(null).reason("X").build();
+        assertNotEquals(thisReasonNull, otherReasonNaoNull);
+        assertNotEquals(otherReasonNaoNull, thisReasonNull);
+    }
+
+    @Test
+    void nullVsNonNullAcceptedDeveFuncionar() {
+        EnrollmentResultDTO thisAcceptedNull = EnrollmentResultDTO.builder()
+                .accepted(null).code("A").reason("R").build();
+        EnrollmentResultDTO otherAcceptedNaoNull = EnrollmentResultDTO.builder()
+                .accepted(true).code("A").reason("R").build();
+        assertNotEquals(thisAcceptedNull, otherAcceptedNaoNull);
+        assertNotEquals(otherAcceptedNaoNull, thisAcceptedNull);
     }
 }
