@@ -76,30 +76,10 @@ pipeline {
                         echo 'Running PMD static code analysis...'
                         sh 'mvn pmd:pmd pmd:check || true'
                     }
-                    post {
-                        always {
-                            echo 'Publishing PMD results...'
-                            // Publish PMD XML report
-                            step([
-                                $class: 'PublishPMDResults',
-                                reportPattern: 'target/pmd/pmd.xml',
-                                healthLimits: [
-                                    [limit: 'HIGH', unstable: 0],
-                                    [limit: 'NORMAL', unstable: 5],
-                                    [limit: 'LOW', unstable: 10]
-                                ]
-                            ])
-                            // Publish PMD HTML report
-                            publishHTML([
-                                reportDir: 'target/pmd',
-                                reportFiles: 'pmd.html',
-                                reportName: 'PMD Report',
-                                allowMissing: true,
-                                keepAll: true
-                            ])
-                            // Archive PMD artifacts
-                            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
-                        }
+                post {
+                    always {
+                        echo 'PMD analysis finished (mvn pmd:pmd pmd:check).'
+                        // Relatório HTML fica em target/site/pmd.html
                     }
                 }
             }
