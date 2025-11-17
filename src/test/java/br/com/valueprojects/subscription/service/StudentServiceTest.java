@@ -127,6 +127,54 @@ class StudentServiceTest {
     }
 
     @Test
+    void testUpdateStudentWithNullFieldsKeepsExistingValues() {
+        // prepare DTO with null optional fields so existing student values should be preserved
+        StudentDTO updateDTO = StudentDTO.builder()
+                .name("Updated Student")
+                .plan(null)
+                .completedCourses(null)
+                .credits(null)
+                .coins(null)
+                .build();
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StudentDTO result = studentService.updateStudent(1L, updateDTO);
+
+        assertNotNull(result);
+        // unchanged numeric values
+        assertEquals(5, result.getCompletedCourses());
+        assertEquals(10, result.getCredits());
+        assertEquals(20, result.getCoins());
+        // name should be updated
+        assertEquals("Updated Student", result.getName());
+        verify(studentRepository, times(1)).findById(1L);
+        verify(studentRepository, times(1)).save(any(Student.class));
+    }
+
+    @Test
+    void testUpdateStudentWithBasicPlanSetsBasic() {
+        StudentDTO updateDTO = StudentDTO.builder()
+                .name("Updated Student")
+                .plan("BASIC")
+                .completedCourses(6)
+                .credits(11)
+                .coins(21)
+                .build();
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StudentDTO result = studentService.updateStudent(1L, updateDTO);
+
+        assertNotNull(result);
+        assertEquals("Updated Student", result.getName());
+        assertEquals("BASIC", result.getPlan());
+        verify(studentRepository, times(1)).save(any(Student.class));
+    }
+
+    @Test
     void testDeleteStudent() {
         when(studentRepository.existsById(1L)).thenReturn(true);
         doNothing().when(studentRepository).deleteById(1L);

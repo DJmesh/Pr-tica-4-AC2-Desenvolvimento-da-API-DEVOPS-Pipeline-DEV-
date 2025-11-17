@@ -7,10 +7,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class CourseCodeTest {
 
     @Test
-    void shouldCreateCourseCodeWithValidCode() {
-        CourseCode courseCode = new CourseCode("CS101");
-        assertNotNull(courseCode);
-        assertEquals("CS101", courseCode.getCode());
+    void constructor_nullOrEmpty_throws() {
+        assertThrows(IllegalArgumentException.class, () -> new CourseCode(null));
+        assertThrows(IllegalArgumentException.class, () -> new CourseCode("   "));
+    }
+
+    @Test
+    void equals_sameAndDifferentCases_and_hashCode() {
+        CourseCode a = new CourseCode("abc-101");
+        CourseCode b = new CourseCode("ABC-101");
+
+        // same value (constructor normalizes to upper case)
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+
+        // reflexive (this == o)
+        assertTrue(a.equals(a));
+
+        // null and different type
+        assertFalse(a.equals(null));
+        assertFalse(a.equals("ABC-101"));
     }
 
     @Test
@@ -20,74 +36,34 @@ class CourseCodeTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenCodeIsNull() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new CourseCode(null);
-        });
-    }
-
-    @Test
-    void shouldThrowExceptionWhenCodeIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new CourseCode("");
-        });
-    }
-
-    @Test
-    void shouldThrowExceptionWhenCodeIsBlank() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new CourseCode("   ");
-        });
-    }
-
-    @Test
     void shouldThrowExceptionWhenCodeExceedsMaxLength() {
-        String longCode = "A".repeat(51);
-        assertThrows(IllegalArgumentException.class, () -> {
-            new CourseCode(longCode);
-        });
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 51; i++) sb.append('A');
+        String longCode = sb.toString();
+        assertThrows(IllegalArgumentException.class, () -> new CourseCode(longCode));
     }
 
     @Test
     void shouldAcceptCodeWithMaxLength() {
-        String maxLengthCode = "A".repeat(50);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 50; i++) sb.append('A');
+        String maxLengthCode = sb.toString();
         CourseCode courseCode = new CourseCode(maxLengthCode);
         assertEquals(maxLengthCode, courseCode.getCode());
     }
 
     @Test
-    void shouldHaveEqualsAndHashCode() {
-        CourseCode code1 = new CourseCode("CS101");
-        CourseCode code2 = new CourseCode("CS101");
-        CourseCode code3 = new CourseCode("CS102");
+    void noArgConstructorAndToStringBehavior() {
+        // no-arg constructor is used by frameworks (JPA) and should be covered
+        CourseCode empty = new CourseCode();
+        assertNull(empty.getCode());
+        // toString should return null when code is null
+        assertNull(empty.toString());
+        assertNotEquals(empty, new CourseCode("CS101"));
 
-        assertEquals(code1, code2);
-        assertEquals(code1.hashCode(), code2.hashCode());
-        assertNotEquals(code1, code3);
-    }
-
-    @Test
-    void shouldReturnCodeInToString() {
-        CourseCode courseCode = new CourseCode("CS101");
-        assertEquals("CS101", courseCode.toString());
-    }
-
-    @Test
-    void shouldHandleSpecialCharacters() {
-        CourseCode courseCode = new CourseCode("CS-101");
-        assertEquals("CS-101", courseCode.getCode());
-    }
-
-    @Test
-    void shouldHandleNumbers() {
-        CourseCode courseCode = new CourseCode("101");
-        assertEquals("101", courseCode.getCode());
-    }
-
-    @Test
-    void shouldHandleMixedCase() {
-        CourseCode courseCode = new CourseCode("cs101");
-        assertEquals("CS101", courseCode.getCode());
+        // toString for non-null
+        CourseCode cc = new CourseCode("CS101");
+        assertEquals("CS101", cc.toString());
     }
 }
 

@@ -27,6 +27,25 @@ public class EnrollmentDTO {
     @Schema(description = "Indica se está usando voucher", example = "false")
     @Builder.Default
     private Boolean usingVoucher = false;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EnrollmentDTO that = (EnrollmentDTO) o;
+        return java.util.Objects.equals(studentId, that.studentId) &&
+                java.util.Objects.equals(courseCode, that.courseCode) &&
+                java.util.Objects.equals(usingVoucher, that.usingVoucher);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(studentId, courseCode, usingVoucher);
+    }
 }
 
 

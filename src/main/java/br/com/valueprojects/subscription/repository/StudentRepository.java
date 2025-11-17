@@ -1,7 +1,6 @@
 package br.com.valueprojects.subscription.repository;
 
 import br.com.valueprojects.subscription.entity.Student;
-import br.com.valueprojects.subscription.vo.Plan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

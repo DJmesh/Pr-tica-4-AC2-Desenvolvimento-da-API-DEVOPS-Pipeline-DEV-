@@ -54,7 +54,8 @@ public class ProgressService {
 
         int available = Math.min(coinsToConvert, student.getCoins());
         int credits = available / 2;
-        student.setCoins(student.getCoins() - available + (available - credits * 2));
+        int remainder = available - credits * 2;
+        student.setCoins(student.getCoins() - available + remainder);
         student.addCredits(credits);
 
         return studentService.updateStudent(studentId, StudentDTO.fromEntity(student));

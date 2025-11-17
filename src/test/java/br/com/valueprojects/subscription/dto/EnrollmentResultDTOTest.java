@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class EnrollmentResultDTOTest {
 
     static class EnrollmentResultDTOFake extends EnrollmentResultDTO {
-        @Override
         protected boolean canEqual(Object other) {
             return false;
         }

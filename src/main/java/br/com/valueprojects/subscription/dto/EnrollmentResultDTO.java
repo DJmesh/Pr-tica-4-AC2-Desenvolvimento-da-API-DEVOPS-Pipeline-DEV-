@@ -37,6 +37,25 @@ public class EnrollmentResultDTO {
                 .reason(reason)
                 .build();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EnrollmentResultDTO that = (EnrollmentResultDTO) o;
+        return java.util.Objects.equals(accepted, that.accepted) &&
+                java.util.Objects.equals(code, that.code) &&
+                java.util.Objects.equals(reason, that.reason);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(accepted, code, reason);
+    }
 }
 
 

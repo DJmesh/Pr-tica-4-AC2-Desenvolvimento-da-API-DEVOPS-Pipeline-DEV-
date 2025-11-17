@@ -10,7 +10,7 @@ public class EnrollmentService {
 
     public static final String REJECT_REASON_INSUFFICIENT = "INSUFFICIENT_CREDIT_OR_VOUCHER";
 
-    public static class Result {
+    public static final class Result {
         public final boolean accepted;
         public final String code;    // course code when accepted
         public final String reason;  // reject reason when not accepted

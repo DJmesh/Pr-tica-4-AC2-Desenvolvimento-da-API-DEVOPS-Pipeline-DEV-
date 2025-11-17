@@ -36,7 +36,8 @@ public class ProgressService {
     public void convertCoins(Student student, int coinsToConvert) {
         int available = Math.min(coinsToConvert, student.getCoins());
         int credits = available / 2;
-        student.setCoins(available - credits * 2 + (student.getCoins() - available));
+        int remainder = available - credits * 2;
+        student.setCoins(student.getCoins() - available + remainder);
         student.addCredits(credits);
     }
 }

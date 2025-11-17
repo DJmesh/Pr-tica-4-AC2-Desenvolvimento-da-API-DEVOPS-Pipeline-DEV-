@@ -22,7 +22,6 @@ class EnrollmentDTOTest {
     }
 
     static class EnrollmentDTOFake extends EnrollmentDTO {
-        @Override
         protected boolean canEqual(Object other) {
             return false;
         }

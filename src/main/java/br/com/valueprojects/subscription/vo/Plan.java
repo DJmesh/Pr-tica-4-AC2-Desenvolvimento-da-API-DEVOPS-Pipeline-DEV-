@@ -2,7 +2,6 @@ package br.com.valueprojects.subscription.vo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,7 +12,6 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @Getter
 @NoArgsConstructor
-@EqualsAndHashCode
 public class Plan {
 
     public static final Plan BASIC = new Plan("BASIC");
@@ -25,7 +23,7 @@ public class Plan {
     private static final int MINIMUM_COURSES_FOR_PREMIUM = 12;
 
     private Plan(String type) {
-        if (type == null || (!type.equals("BASIC") && !type.equals("PREMIUM"))) {
+        if (type == null || (!"BASIC".equals(type) && !"PREMIUM".equals(type))) {
             throw new IllegalArgumentException("Tipo de plano inválido: " + type);
         }
         this.type = type;
@@ -67,6 +65,23 @@ public class Plan {
     @Override
     public String toString() {
         return type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Plan plan = (Plan) o;
+        return java.util.Objects.equals(type, plan.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(type);
     }
 }
 

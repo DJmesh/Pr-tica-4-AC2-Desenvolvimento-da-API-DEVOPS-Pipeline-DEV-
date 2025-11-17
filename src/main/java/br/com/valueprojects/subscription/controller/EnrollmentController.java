@@ -36,11 +36,11 @@ public class EnrollmentController {
             @ApiResponse(responseCode = "404", description = "Estudante não encontrado")
     })
     public ResponseEntity<EnrollmentResultDTO> enroll(@Valid @RequestBody EnrollmentDTO enrollmentDTO) {
-        EnrollmentResultDTO result = enrollmentService.enroll(
-                enrollmentDTO.getStudentId(),
-                enrollmentDTO.getCourseCode(),
-                enrollmentDTO.getUsingVoucher() != null ? enrollmentDTO.getUsingVoucher() : false
-        );
+    EnrollmentResultDTO result = enrollmentService.enroll(
+        enrollmentDTO.getStudentId(),
+        enrollmentDTO.getCourseCode(),
+        Boolean.TRUE.equals(enrollmentDTO.getUsingVoucher())
+    );
         
         HttpStatus status = result.getAccepted() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(result);
