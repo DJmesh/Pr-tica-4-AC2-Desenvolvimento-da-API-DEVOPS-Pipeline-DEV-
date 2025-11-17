@@ -6,10 +6,6 @@ pipeline {
         jdk 'JDK17'
     }
 
-    environment {
-        JACOCO_COVERAGE = '0'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -22,12 +18,10 @@ pipeline {
             steps {
                 echo 'Pre-Build: Cleaning workspace and preparing environment...'
                 sh '''
-                    echo Maven Version:
+                    echo "Maven Version:"
                     mvn --version
-
-                    echo Java Version:
+                    echo "Java Version:"
                     java -version
-
                     mvn clean
                 '''
             }
@@ -47,10 +41,9 @@ pipeline {
             }
             post {
                 always {
-                    echo 'Publishing test results (JUnit)...'
-                    // JUnit padrão do Jenkins – esse step EXISTE
-                    junit allowEmptyResults: false,
-                          testResults: 'target/surefire-reports/*.xml'
+                    echo 'Publishing test results...'
+                    junit 'target/surefire-reports/*.xml'
+                    publishTestResults testResultsPattern: 'target/surefire-reports/*.xml'
                 }
             }
         }
@@ -59,24 +52,21 @@ pipeline {
             parallel {
                 stage('JaCoCo Coverage') {
                     steps {
-                        echo 'Generating JaCoCo coverage report...'
-                        sh 'mvn -DskipTests=false test jacoco:report'
-                        script {
-                            def jacocoCsvPath = 'target/site/jacoco/jacoco.csv'
-                            if (fileExists(jacocoCsvPath)) {
-                                def csv = readFile(jacocoCsvPath)
-                                def lines = csv.readLines()
-                                if (lines.size() > 1) {
-                                    def data = lines[1].split(',')
-                                    // coluna 3 é a cobertura em %
-                                    env.JACOCO_COVERAGE = data[3].trim()
-                                    echo "JaCoCo Coverage (LINE): ${env.JACOCO_COVERAGE}%"
-                                } else {
-                                    echo 'JaCoCo CSV sem dados suficientes.'
-                                }
-                            } else {
-                                echo "Arquivo ${jacocoCsvPath} não encontrado. Verifique a configuração do JaCoCo."
-                            }
+                        echo 'Generating JaCoCo code coverage report...'
+                        sh 'mvn verify'
+                    }
+                    post {
+                        always {
+                            echo 'Publishing JaCoCo coverage report...'
+                            publishHTML([
+                                reportDir: 'target/site/jacoco',
+                                reportFiles: 'index.html',
+                                reportName: 'JaCoCo Coverage Report',
+                                allowMissing: false,
+                                keepAll: true
+                            ])
+                            // Archive coverage report
+                            archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
                         }
                     }
                 }
@@ -84,7 +74,32 @@ pipeline {
                 stage('PMD Analysis') {
                     steps {
                         echo 'Running PMD static code analysis...'
-                        sh 'mvn pmd:pmd'
+                        sh 'mvn pmd:pmd pmd:check || true'
+                    }
+                    post {
+                        always {
+                            echo 'Publishing PMD results...'
+                            // Publish PMD XML report
+                            step([
+                                $class: 'PublishPMDResults',
+                                reportPattern: 'target/pmd/pmd.xml',
+                                healthLimits: [
+                                    [limit: 'HIGH', unstable: 0],
+                                    [limit: 'NORMAL', unstable: 5],
+                                    [limit: 'LOW', unstable: 10]
+                                ]
+                            ])
+                            // Publish PMD HTML report
+                            publishHTML([
+                                reportDir: 'target/pmd',
+                                reportFiles: 'pmd.html',
+                                reportName: 'PMD Report',
+                                allowMissing: true,
+                                keepAll: true
+                            ])
+                            // Archive PMD artifacts
+                            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
+                        }
                     }
                 }
             }
@@ -92,19 +107,65 @@ pipeline {
 
         stage('Quality Gate - Coverage Check') {
             steps {
+                echo 'Checking Quality Gate: 99% coverage required...'
                 script {
-                    def coverage = env.JACOCO_COVERAGE?.trim()
-                    if (!coverage) {
-                        error "Não foi possível calcular a cobertura JaCoCo (JACOCO_COVERAGE vazio)."
+                    // Wait for JaCoCo report to be generated
+                    sleep(time: 2, unit: 'SECONDS')
+                    
+                    // Read JaCoCo XML report
+                    def jacocoReportFile = 'target/site/jacoco/jacoco.xml'
+                    if (!fileExists(jacocoReportFile)) {
+                        error("❌ JaCoCo report not found at ${jacocoReportFile}. Please check if tests ran successfully.")
                     }
-                    def coverageVal = coverage.toBigDecimal()
-                    echo "Quality Gate: coverage atual = ${coverageVal}%"
-
-                    if (coverageVal < 99) {
+                    
+                    def jacocoReport = readFile(jacocoReportFile)
+                    def parser = new XmlSlurper().parseText(jacocoReport)
+                    
+                    // Calculate coverage from JaCoCo XML - use BUNDLE level
+                    def report = parser.report
+                    def counter = report.counter.find { 
+                        it.@type == 'LINE'
+                    }
+                    
+                    if (counter == null) {
+                        // Try alternative path
+                        counter = parser.counter.find { 
+                            it.@type == 'LINE'
+                        }
+                    }
+                    
+                    if (counter == null) {
+                        error("❌ Could not find LINE counter in JaCoCo report")
+                    }
+                    
+                    def missed = (counter.@missed.text().toInteger())
+                    def covered = (counter.@covered.text().toInteger())
+                    def total = missed + covered
+                    
+                    def coverage = total > 0 ? (covered / total * 100) : 0
+                    
+                    echo "========================================="
+                    echo "QUALITY GATE - COVERAGE REPORT"
+                    echo "========================================="
+                    echo "Lines Covered: ${covered}"
+                    echo "Lines Missed: ${missed}"
+                    echo "Total Lines: ${total}"
+                    echo "Coverage: ${String.format("%.2f", coverage)}%"
+                    echo "Required: 99.00%"
+                    echo "========================================="
+                    
+                    // Set environment variable for other pipelines
+                    env.COVERAGE_PERCENTAGE = String.format("%.2f", coverage)
+                    env.COVERAGE_COVERED = "${covered}"
+                    env.COVERAGE_MISSED = "${missed}"
+                    env.COVERAGE_TOTAL = "${total}"
+                    
+                    if (coverage < 99.0) {
                         currentBuild.result = 'UNSTABLE'
-                        error "Quality Gate FAILED: cobertura abaixo de 99% (${coverageVal}%)."
+                        error("❌ QUALITY GATE FAILED: Coverage ${String.format("%.2f", coverage)}% is below required 99.00%")
                     } else {
-                        echo "Quality Gate PASSED: cobertura >= 99% (${coverageVal}%)."
+                        echo "✅ QUALITY GATE PASSED: Coverage ${String.format("%.2f", coverage)}% >= 99.00%"
+                        currentBuild.result = 'SUCCESS'
                     }
                 }
             }
@@ -113,24 +174,54 @@ pipeline {
 
     post {
         always {
-            echo '========================================='
-            echo 'POST-BUILD SUMMARY (Pipeline-test-dev)'
-            echo "Build: #${env.BUILD_NUMBER}"
-            echo "Result: ${currentBuild.currentResult}"
-            echo "JaCoCo Coverage (env): ${env.JACOCO_COVERAGE}%"
-            echo '========================================='
-
-            archiveArtifacts artifacts: 'target/**/*.*',
-                             allowEmptyArchive: true
+            echo 'Post-Build: Archiving artifacts and reports...'
+            
+            // Archive JAR
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
+            
+            // Archive JaCoCo reports
+            archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
+            
+            // Archive JUnit reports
+            archiveArtifacts artifacts: 'target/surefire-reports/**/*', allowEmptyArchive: true
+            
+            // Archive PMD reports
+            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
+            
+            // Archive all site reports
+            archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
+            
+            // Publish summary
+            script {
+                echo "========================================="
+                echo "POST-BUILD SUMMARY"
+                echo "========================================="
+                echo "Coverage: ${env.COVERAGE_PERCENTAGE ?: 'N/A'}%"
+                echo "Lines Covered: ${env.COVERAGE_COVERED ?: 'N/A'}"
+                echo "Lines Missed: ${env.COVERAGE_MISSED ?: 'N/A'}"
+                echo "Total Lines: ${env.COVERAGE_TOTAL ?: 'N/A'}"
+                echo "========================================="
+            }
         }
         success {
-            echo '✅ Pipeline-test-dev SUCCESS!'
-        }
-        unstable {
-            echo '⚠️ Pipeline-test-dev unstable (Quality Gate failed)!'
+            echo '✅ Pipeline-test-dev completed successfully!'
+            echo "Coverage: ${env.COVERAGE_PERCENTAGE}%"
+            script {
+                if (env.COVERAGE_PERCENTAGE != null && (env.COVERAGE_PERCENTAGE as Double) >= 99.0) {
+                    echo 'Triggering Docker image build pipeline...'
+                    build job: 'subscription-service-image-docker', wait: false, parameters: [
+                        string(name: 'COVERAGE_PERCENTAGE', value: env.COVERAGE_PERCENTAGE),
+                        string(name: 'BUILD_NUMBER', value: env.BUILD_NUMBER)
+                    ]
+                }
+            }
         }
         failure {
             echo '❌ Pipeline-test-dev failed!'
         }
+        unstable {
+            echo '⚠️ Pipeline-test-dev unstable (Quality Gate failed)!'
+        }
     }
 }
+
