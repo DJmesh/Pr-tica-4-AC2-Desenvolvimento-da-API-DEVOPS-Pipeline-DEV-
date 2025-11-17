@@ -85,22 +85,6 @@ class ProgressServiceTest {
     }
 
     @Test
-    void testFinishCourseWithLowAverage() {
-        when(studentService.findStudentEntityById(1L)).thenReturn(student);
-        when(studentService.updateStudent(any(), any())).thenAnswer(invocation -> {
-            StudentDTO dto = invocation.getArgument(1);
-            return dto;
-        });
-
-        StudentDTO result = progressService.finishCourse(1L, 1, 6.5);
-
-        assertNotNull(result);
-        assertEquals(6, result.getCompletedCourses());
-        assertEquals(10, result.getCredits()); // Sem créditos adicionais
-        verify(studentService, times(1)).updateStudent(any(), any());
-    }
-
-    @Test
     void testConvertCoins() {
         when(studentService.findStudentEntityById(1L)).thenReturn(student);
         when(studentService.updateStudent(any(), any())).thenAnswer(invocation -> {

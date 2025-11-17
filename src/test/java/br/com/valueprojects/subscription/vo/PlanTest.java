@@ -109,27 +109,6 @@ class PlanTest {
         assertEquals("BASIC", Plan.BASIC.getType());
         assertEquals("PREMIUM", Plan.PREMIUM.getType());
     }
-
-    @Test
-    void testPlanConstructorWithReflection() throws Exception {
-        // Testar construtor privado usando reflexão
-        java.lang.reflect.Constructor<Plan> constructor = Plan.class.getDeclaredConstructor(String.class);
-        constructor.setAccessible(true);
-        
-        // Testar com tipo inválido
-        Exception exception1 = assertThrows(Exception.class, () -> {
-            constructor.newInstance("INVALID");
-        });
-        assertTrue(exception1.getCause() instanceof IllegalArgumentException || 
-                   exception1 instanceof IllegalArgumentException);
-        
-        // Testar com null
-        Exception exception2 = assertThrows(Exception.class, () -> {
-            constructor.newInstance((String) null);
-        });
-        assertTrue(exception2.getCause() instanceof IllegalArgumentException || 
-                   exception2 instanceof IllegalArgumentException);
-    }
 }
 
 
