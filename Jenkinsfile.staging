@@ -23,8 +23,12 @@ pipeline {
                 echo 'Stopping existing containers...'
                 script {
                     sh '''
-                        docker-compose -f ${COMPOSE_FILE} down -v || true
-                        docker system prune -f || true
+                        if command -v docker-compose &> /dev/null || command -v docker &> /dev/null; then
+                            docker-compose -f ${COMPOSE_FILE} down -v || docker compose -f ${COMPOSE_FILE} down -v || true
+                            docker system prune -f || true
+                        else
+                            echo "⚠️ Docker/Docker Compose not available. Skipping container operations."
+                        fi
                     '''
                 }
             }
@@ -35,20 +39,25 @@ pipeline {
                 echo 'Starting container from Docker Hub...'
                 script {
                     sh '''
-                        echo "Pulling latest images..."
-                        docker-compose -f ${COMPOSE_FILE} pull || echo "Using local image"
-                        
-                        echo "Starting services..."
-                        docker-compose -f ${COMPOSE_FILE} up -d --build --no-color
-                        
-                        echo "Waiting for services to be ready..."
-                        sleep 30
-                        
-                        echo "Checking container status..."
-                        docker-compose -f ${COMPOSE_FILE} ps
-                        
-                        echo "Showing logs..."
-                        docker-compose -f ${COMPOSE_FILE} logs --tail=50
+                        if command -v docker-compose &> /dev/null || command -v docker &> /dev/null; then
+                            echo "Pulling latest images..."
+                            docker-compose -f ${COMPOSE_FILE} pull || docker compose -f ${COMPOSE_FILE} pull || echo "Using local image"
+                            
+                            echo "Starting services..."
+                            docker-compose -f ${COMPOSE_FILE} up -d --build --no-color || docker compose -f ${COMPOSE_FILE} up -d --build --no-color
+                            
+                            echo "Waiting for services to be ready..."
+                            sleep 30
+                            
+                            echo "Checking container status..."
+                            docker-compose -f ${COMPOSE_FILE} ps || docker compose -f ${COMPOSE_FILE} ps
+                            
+                            echo "Showing logs..."
+                            docker-compose -f ${COMPOSE_FILE} logs --tail=50 || docker compose -f ${COMPOSE_FILE} logs --tail=50
+                        else
+                            echo "⚠️ Docker/Docker Compose not available. Skipping container deployment."
+                            echo "ℹ️ This pipeline requires Docker to be installed and configured."
+                        fi
                     '''
                 }
             }
@@ -125,11 +134,15 @@ pipeline {
                         echo "========================================="
                         echo "STAGING DEPLOYMENT VERIFICATION"
                         echo "========================================="
-                        echo "Container Status:"
-                        docker-compose -f ${COMPOSE_FILE} ps
-                        echo ""
-                        echo "Container Logs (last 20 lines):"
-                        docker-compose -f ${COMPOSE_FILE} logs --tail=20
+                        if command -v docker-compose &> /dev/null || command -v docker &> /dev/null; then
+                            echo "Container Status:"
+                            docker-compose -f ${COMPOSE_FILE} ps || docker compose -f ${COMPOSE_FILE} ps
+                            echo ""
+                            echo "Container Logs (last 20 lines):"
+                            docker-compose -f ${COMPOSE_FILE} logs --tail=20 || docker compose -f ${COMPOSE_FILE} logs --tail=20
+                        else
+                            echo "⚠️ Docker not available for verification"
+                        fi
                         echo "========================================="
                     '''
                 }
@@ -143,8 +156,12 @@ pipeline {
             echo 'STAGING PIPELINE COMPLETED'
             echo '========================================'
             sh '''
-                echo "Final container status:"
-                docker-compose -f ${COMPOSE_FILE} ps
+                if command -v docker-compose &> /dev/null || command -v docker &> /dev/null; then
+                    echo "Final container status:"
+                    docker-compose -f ${COMPOSE_FILE} ps || docker compose -f ${COMPOSE_FILE} ps
+                else
+                    echo "⚠️ Docker not available"
+                fi
             '''
         }
         success {
@@ -156,8 +173,12 @@ pipeline {
         failure {
             echo '❌ Staging deployment failed!'
             sh '''
-                echo "Error logs:"
-                docker-compose -f ${COMPOSE_FILE} logs --tail=50
+                if command -v docker-compose &> /dev/null || command -v docker &> /dev/null; then
+                    echo "Error logs:"
+                    docker-compose -f ${COMPOSE_FILE} logs --tail=50 || docker compose -f ${COMPOSE_FILE} logs --tail=50
+                else
+                    echo "⚠️ Docker not available for error logs"
+                fi
             '''
         }
         cleanup {

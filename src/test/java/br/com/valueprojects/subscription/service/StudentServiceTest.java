@@ -127,6 +127,63 @@ class StudentServiceTest {
     }
 
     @Test
+    void testUpdateStudentWithNullFields() {
+        StudentDTO updateDTO = StudentDTO.builder()
+                .name("Updated Student")
+                .plan(null)
+                .completedCourses(null)
+                .credits(null)
+                .coins(null)
+                .build();
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(studentRepository.save(any(Student.class))).thenReturn(student);
+
+        StudentDTO result = studentService.updateStudent(1L, updateDTO);
+
+        assertNotNull(result);
+        assertEquals("Updated Student", result.getName());
+        verify(studentRepository, times(1)).findById(1L);
+        verify(studentRepository, times(1)).save(any(Student.class));
+    }
+
+    @Test
+    void testUpdateStudentWithBasicPlan() {
+        StudentDTO updateDTO = StudentDTO.builder()
+                .name("Updated Student")
+                .plan("BASIC")
+                .completedCourses(5)
+                .credits(10)
+                .coins(15)
+                .build();
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
+        when(studentRepository.save(any(Student.class))).thenReturn(student);
+
+        StudentDTO result = studentService.updateStudent(1L, updateDTO);
+
+        assertNotNull(result);
+        verify(studentRepository, times(1)).findById(1L);
+        verify(studentRepository, times(1)).save(any(Student.class));
+    }
+
+    @Test
+    void testUpdateStudentNotFound() {
+        StudentDTO updateDTO = StudentDTO.builder()
+                .name("Updated Student")
+                .build();
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> {
+            studentService.updateStudent(1L, updateDTO);
+        });
+
+        verify(studentRepository, times(1)).findById(1L);
+        verify(studentRepository, never()).save(any(Student.class));
+    }
+
+    @Test
     void testDeleteStudent() {
         when(studentRepository.existsById(1L)).thenReturn(true);
         doNothing().when(studentRepository).deleteById(1L);

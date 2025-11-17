@@ -89,5 +89,14 @@ class CourseCodeTest {
         CourseCode courseCode = new CourseCode("cs101");
         assertEquals("CS101", courseCode.getCode());
     }
+
+    @Test
+    void shouldTestNoArgsConstructor() {
+        // Testar construtor sem argumentos (Lombok)
+        CourseCode courseCode = new CourseCode();
+        assertNotNull(courseCode);
+        // O código será null até ser setado
+        assertNull(courseCode.getCode());
+    }
 }
 

@@ -68,12 +68,7 @@ pipeline {
             
             // Archive all reports
             archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
-            
-            publishHTML([
-                reportDir: 'target/site/jacoco',
-                reportFiles: 'index.html',
-                reportName: 'JaCoCo Coverage Report'
-            ])
+            echo 'JaCoCo report available at: target/site/jacoco/index.html'
         }
         success {
             echo '✅ Pipeline DEV completed successfully!'

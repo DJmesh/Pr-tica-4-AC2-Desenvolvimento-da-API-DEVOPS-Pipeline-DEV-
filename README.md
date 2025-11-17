@@ -1,151 +1,232 @@
 # Subscription Service API
 
-API REST para gerenciamento de assinaturas de estudantes implementada com **Clean Architecture**, **DDD**, **Spring Boot**, **JPA**, **Docker** e **Jenkins CI/CD**.
+API REST para gerenciamento de assinaturas de estudantes com funcionalidades de matrícula, progresso e planos. Implementada seguindo Clean Architecture e DDD (Domain-Driven Design).
 
-## 🚀 Quick Start
+## 📋 Sobre o Projeto
 
-### Pré-requisitos
+Este projeto é uma API Spring Boot que gerencia assinaturas de estudantes em cursos online, incluindo:
+
+- **Gestão de Estudantes**: CRUD completo de estudantes
+- **Sistema de Matrículas**: Matrícula em cursos usando créditos ou vouchers
+- **Sistema de Progresso**: Acompanhamento de cursos concluídos e ganho de créditos
+- **Planos de Assinatura**: Sistema de planos BASIC e PREMIUM com promoção automática
+- **Conversão de Moedas**: Conversão de moedas em créditos (2:1)
+
+## 🏗️ Arquitetura
+
+O projeto segue os princípios de **Clean Architecture** e **DDD**:
+
+```
+src/main/java/br/com/valueprojects/subscription/
+├── controller/      # Camada de apresentação (REST Controllers)
+├── service/         # Camada de aplicação (Services)
+├── entity/          # Entidades de domínio
+├── repository/      # Camada de persistência (JPA Repositories)
+├── dto/             # Data Transfer Objects
+├── vo/              # Value Objects
+└── config/          # Configurações (Swagger, etc.)
+```
+
+### Camadas
+
+- **Controller**: Endpoints REST com validação e documentação Swagger
+- **Service**: Lógica de negócio e orquestração
+- **Repository**: Acesso a dados usando Spring Data JPA
+- **Entity**: Entidades de domínio com regras de negócio
+- **DTO**: Objetos de transferência de dados
+- **VO**: Value Objects imutáveis
+
+## 🚀 Tecnologias
+
+- **Java 17**
+- **Spring Boot 3.3.4**
+- **Spring Data JPA**
+- **PostgreSQL** (produção/staging)
+- **H2** (desenvolvimento/testes)
+- **Lombok**
+- **Swagger/OpenAPI 3**
+- **JUnit 5**
+- **Mockito**
+- **Cucumber** (BDD)
+- **JaCoCo** (cobertura de código)
+- **PMD** (análise estática)
+- **Maven**
+
+## 📦 Pré-requisitos
 
 - Java 17+
 - Maven 3.6+
 - Docker e Docker Compose (opcional)
-- Jenkins (para CI/CD)
+- PostgreSQL (para staging/produção)
 
-### Executar Localmente
+## 🔧 Configuração
+
+### ⚡ Setup Rápido (Recomendado)
+
+**IMPORTANTE**: Execute o script de setup primeiro para configurar tudo automaticamente:
 
 ```bash
-# 1. Compilar e executar testes
-mvn clean verify
+# Dar permissão de execução
+chmod +x setup-local.sh
 
-# 2. Executar aplicação
+# Executar setup
+./setup-local.sh
+```
+
+Este script irá:
+- ✅ Verificar e instalar dependências (Java, Maven, Docker, etc.)
+- ✅ Baixar dependências do Maven
+- ✅ Compilar o projeto
+- ✅ Executar todos os testes
+- ✅ Gerar relatórios de qualidade (JaCoCo, PMD)
+- ✅ Verificar configuração do Docker
+
+### Desenvolvimento Local (Manual)
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/DJmesh/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-.git
+cd Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-
+```
+
+2. Execute os testes:
+```bash
+mvn clean test
+```
+
+3. Execute a aplicação:
+```bash
 mvn spring-boot:run
-
-# 3. Acessar
-# API: http://localhost:8080/api/students
-# Swagger: http://localhost:8080/swagger-ui.html
-# H2 Console: http://localhost:8080/h2-console
-#   - JDBC URL: jdbc:h2:mem:subscriptiondb
-#   - User: sa
-#   - Password: (vazio)
 ```
 
-### Executar com Docker
+A aplicação estará disponível em `http://localhost:8080`
 
+### Docker Compose
+
+#### Staging
 ```bash
-# 1. Build e package
-mvn clean package -DskipTests
-
-# 2. Build Docker image
-docker build -t subscription-service:latest .
-
-# 3. Run com docker-compose (staging)
 docker-compose -f docker-compose.staging.yml up -d
-
-# 4. Acessar
-http://localhost:8080
 ```
 
-## 📚 Documentação Completa
+#### Produção
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-Veja `IMPLEMENTATION_DOCUMENTATION.md` para documentação detalhada de:
+## 📚 Documentação da API
 
-- Estrutura do projeto
-- Clean Architecture e DDD
-- Camadas implementadas
-- Configurações
-- Testes
-- Docker
-- Jenkins Pipelines
-- Swagger/OpenAPI
-- Relatórios de qualidade
-
-## 📋 Endpoints Principais
-
-### Estudantes
-
-- `GET /api/students` - Lista todos
-- `GET /api/students/{id}` - Busca por ID
-- `POST /api/students` - Cria novo
-- `PUT /api/students/{id}` - Atualiza
-- `DELETE /api/students/{id}` - Deleta
-
-### Matrículas
-
-- `POST /api/enrollments` - Realiza matrícula
-
-### Progresso
-
-- `POST /api/progress/finish-course` - Finaliza curso(s)
-- `POST /api/progress/convert-coins` - Converte moedas
-
-**Documentação completa no Swagger**: http://localhost:8080/swagger-ui.html
+A documentação Swagger está disponível em:
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
 
 ## 🧪 Testes
 
+### Executar Todos os Testes
 ```bash
-# Todos os testes
 mvn test
-
-# Com cobertura
-mvn verify
-
-# Ver relatório JaCoCo
-open target/site/jacoco/index.html
 ```
 
-## 📊 Qualidade
+### Cobertura de Código
+```bash
+mvn clean test jacoco:report
+```
 
-- **Cobertura de Testes**: 99% (JaCoCo)
-- **Análise de Código**: PMD
-- **Relatórios**: Gerados em `target/site/`
+Relatório disponível em: `target/site/jacoco/index.html`
 
-## 🔄 CI/CD
+### Análise Estática (PMD)
+```bash
+mvn pmd:pmd pmd:check
+```
 
-### Jenkins Pipelines
+Relatório disponível em: `target/pmd/pmd.html`
 
-1. **Jenkinsfile.dev**: Pipeline de desenvolvimento com Quality Gate 99%
-2. **Jenkinsfile.docker**: Build e push da imagem Docker (triggered)
-3. **Jenkinsfile.staging**: Deploy em staging
-4. **Jenkinsfile.prod**: Deploy em produção
+## 🔄 CI/CD Pipeline
 
-## 🏗️ Arquitetura
+O projeto utiliza **Jenkins** para CI/CD com os seguintes pipelines:
 
-- **Clean Architecture** com separação de camadas
-- **DDD** com Entities, Value Objects e Repositories
-- **JPA/Hibernate** para persistência
-- **REST API** documentada com Swagger
-- **Docker** para containerização
-- **Jenkins** para CI/CD
+### Pipeline DEV
+- Executa testes unitários e de integração
+- Gera relatórios de cobertura (JaCoCo)
+- Análise estática de código (PMD)
+- Quality Gate: 99% de cobertura de código
 
-## 📦 Tecnologias
+### Pipeline-test-dev
+- Sub-pipeline que executa todos os testes
+- Valida Quality Gate de 99% de cobertura
+- Gera relatórios (JUnit, JaCoCo, PMD)
 
-- Spring Boot 3.3.4
-- Spring Data JPA
-- H2 / PostgreSQL
-- Lombok
-- Swagger/OpenAPI
-- JUnit 5
-- JaCoCo
-- PMD
-- Docker
-- Jenkins
+### Pipeline-image-docker
+- Constrói imagem Docker da aplicação
+- Executado apenas se Quality Gate passar (99% cobertura)
 
-## 👥 Desenvolvimento
+### Pipeline-staging
+- Deploy automático para ambiente de staging
+- Testes de smoke após deploy
 
-Seguindo as especificações da **Prática 4 (AC2)** com:
-✅ Clean Architecture e DDD
-✅ Entities com Lombok
-✅ Repositories JPA
-✅ Profiles configurados
-✅ H2 Console habilitado
-✅ DTOs implementados
-✅ Services completos
-✅ Controllers REST
-✅ Swagger configurado
-✅ Testes abrangentes
-✅ Quality Gate 99%
-✅ Docker e Jenkins
+### Pipeline-prod
+- Deploy para produção
+- Validações adicionais e testes de smoke
 
----
+## 📊 Qualidade de Código
 
-**Documentação completa**: Veja `IMPLEMENTATION_DOCUMENTATION.md`
+- **Cobertura de Testes**: 99%+ (JaCoCo)
+- **Análise Estática**: PMD configurado
+- **Testes Unitários**: JUnit 5 + Mockito
+- **Testes de Integração**: Spring Boot Test
+- **Testes BDD**: Cucumber
+
+## 🌐 Endpoints Principais
+
+### Estudantes
+- `GET /api/students` - Lista todos os estudantes
+- `GET /api/students/{id}` - Busca estudante por ID
+- `POST /api/students` - Cria novo estudante
+- `PUT /api/students/{id}` - Atualiza estudante
+- `DELETE /api/students/{id}` - Remove estudante
+
+### Matrículas
+- `POST /api/enrollments` - Realiza matrícula em curso
+
+### Progresso
+- `POST /api/progress/finish-course` - Finaliza curso(s)
+- `POST /api/progress/convert-coins` - Converte moedas em créditos
+
+## 🔐 Health Check
+
+- **Health Endpoint**: http://localhost:8080/actuator/health
+- **Info Endpoint**: http://localhost:8080/actuator/info
+
+## 📝 Profiles
+
+O projeto suporta múltiplos profiles:
+
+- **default**: H2 em memória (desenvolvimento)
+- **test**: H2 para testes
+- **staging**: PostgreSQL (staging)
+- **prod**: PostgreSQL (produção)
+
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença Apache 2.0.
+
+## 👥 Equipe
+
+Desenvolvido como parte da Prática 4 - AC2 - Desenvolvimento da API DevOps Pipeline.
+
+## 🔗 Links Úteis
+
+- **Repositório**: https://github.com/DJmesh/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-
+- **Jenkins**: http://localhost:8081 (local)
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+
+## 📞 Suporte
+
+Para questões ou suporte, abra uma issue no repositório.

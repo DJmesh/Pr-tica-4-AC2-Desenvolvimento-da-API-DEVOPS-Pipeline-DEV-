@@ -17,11 +17,11 @@ output "jenkins_url" {
 output "job_urls" {
   description = "URLs dos jobs criados"
   value = {
-    dev_pipeline    = "${var.jenkins_url}/job/terraform/job/${jenkins_job.subscription_service_dev.name}"
-    test_dev        = "${var.jenkins_url}/job/terraform/job/${jenkins_job.subscription_service_test_dev.name}"
-    image_docker    = "${var.jenkins_url}/job/terraform/job/${jenkins_job.subscription_service_image_docker.name}"
-    staging         = "${var.jenkins_url}/job/terraform/job/${jenkins_job.subscription_service_staging.name}"
-    production      = "${var.jenkins_url}/job/terraform/job/${jenkins_job.subscription_service_prod.name}"
+    dev_pipeline    = "${var.jenkins_url}/job/${jenkins_job.subscription_service_dev.name}"
+    test_dev        = "${var.jenkins_url}/job/${jenkins_job.subscription_service_test_dev.name}"
+    image_docker    = "${var.jenkins_url}/job/${jenkins_job.subscription_service_image_docker.name}"
+    staging         = "${var.jenkins_url}/job/${jenkins_job.subscription_service_staging.name}"
+    production      = "${var.jenkins_url}/job/${jenkins_job.subscription_service_prod.name}"
   }
 }
 
