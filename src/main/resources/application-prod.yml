@@ -1,13 +1,11 @@
 spring:
-  profiles:
-    active: prod
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:subscription_prod}
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -25,5 +23,14 @@ logging:
   level:
     root: WARN
     br.com.valueprojects.subscription: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
 
 

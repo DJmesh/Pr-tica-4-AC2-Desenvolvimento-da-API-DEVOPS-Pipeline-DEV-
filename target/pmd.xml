@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd xmlns="http://pmd.sourceforge.net/report/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pmd.sourceforge.net/report/2.0.0 http://pmd.sourceforge.net/report_2_0_0.xsd" version="7.0.0" timestamp="2025-11-16T20:59:04.356">
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/EnrollmentService.java">
+<violation beginline="13" endline="13" begincolumn="19" endcolumn="24" rule="ClassWithOnlyPrivateConstructorsShouldBeFinal" ruleset="Design" package="br.com.valueprojects.subscription" class="Result" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_design.html#classwithonlyprivateconstructorsshouldbefinal" priority="1">
+This class has only private constructors and may be final
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/ProgressService.java">
+<violation beginline="39" endline="39" begincolumn="52" endcolumn="84" rule="UselessParentheses" ruleset="Code Style" package="br.com.valueprojects.subscription" class="ProgressService" method="convertCoins" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses" priority="4">
+Useless parentheses.
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/SubscriptionApplication.java">
+<violation beginline="7" endline="7" begincolumn="8" endcolumn="13" rule="UseUtilityClass" ruleset="Design" package="br.com.valueprojects.subscription" class="SubscriptionApplication" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_design.html#useutilityclass" priority="3">
+This utility class has a non-private constructor
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/controller/EnrollmentController.java">
+<violation beginline="42" endline="42" begincolumn="17" endcolumn="98" rule="SimplifiedTernary" ruleset="Design" package="br.com.valueprojects.subscription.controller" class="EnrollmentController" method="enroll" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_design.html#simplifiedternary" priority="3">
+This conditional expression can be simplified with || or &amp;&amp;
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/repository/StudentRepository.java">
+<violation beginline="4" endline="4" begincolumn="1" endcolumn="50" rule="UnnecessaryImport" ruleset="Code Style" package="br.com.valueprojects.subscription.repository" class="StudentRepository" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport" priority="4">
+Unused import 'br.com.valueprojects.subscription.vo.Plan'
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/service/ProgressService.java">
+<violation beginline="57" endline="57" begincolumn="59" endcolumn="84" rule="UselessParentheses" ruleset="Code Style" package="br.com.valueprojects.subscription.service" class="ProgressService" method="convertCoins" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses" priority="4">
+Useless parentheses.
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/vo/CourseCode.java">
+<violation beginline="29" endline="29" begincolumn="21" endcolumn="46" rule="UseLocaleWithCaseConversions" ruleset="Error Prone" package="br.com.valueprojects.subscription.vo" class="CourseCode" method="CourseCode" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_errorprone.html#uselocalewithcaseconversions" priority="3">
+When doing a String.toLowerCase()/toUpperCase() call, use a Locale
+</violation>
+</file>
+<file name="/home/eduardo/Documentos/git/Pr-tica-4-AC2-Desenvolvimento-da-API-DEVOPS-Pipeline-DEV-/src/main/java/br/com/valueprojects/subscription/vo/Plan.java">
+<violation beginline="28" endline="28" begincolumn="31" endcolumn="51" rule="LiteralsFirstInComparisons" ruleset="Best Practices" package="br.com.valueprojects.subscription.vo" class="Plan" method="Plan" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#literalsfirstincomparisons" priority="3">
+Position literals first in String comparisons
+</violation>
+<violation beginline="28" endline="28" begincolumn="56" endcolumn="78" rule="LiteralsFirstInComparisons" ruleset="Best Practices" package="br.com.valueprojects.subscription.vo" class="Plan" method="Plan" externalInfoUrl="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#literalsfirstincomparisons" priority="3">
+Position literals first in String comparisons
+</violation>
+</file>
+</pmd>

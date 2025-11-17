@@ -11,11 +11,20 @@ services:
       - db-prod-volume:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: subscription-service:latest
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - default
     environment:
@@ -27,6 +36,12 @@ services:
       SPRING_PROFILES_ACTIVE: prod
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 volumes:
   db-prod-volume:

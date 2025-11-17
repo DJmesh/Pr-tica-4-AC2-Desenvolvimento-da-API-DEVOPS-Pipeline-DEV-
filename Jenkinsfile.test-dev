@@ -74,21 +74,31 @@ pipeline {
                 stage('PMD Analysis') {
                     steps {
                         echo 'Running PMD static code analysis...'
-                        sh 'mvn pmd:check || true'
+                        sh 'mvn pmd:pmd pmd:check || true'
                     }
                     post {
                         always {
                             echo 'Publishing PMD results...'
+                            // Publish PMD XML report
                             step([
                                 $class: 'PublishPMDResults',
-                                reportPattern: 'target/pmd.xml',
+                                reportPattern: 'target/pmd/pmd.xml',
                                 healthLimits: [
                                     [limit: 'HIGH', unstable: 0],
                                     [limit: 'NORMAL', unstable: 5],
                                     [limit: 'LOW', unstable: 10]
                                 ]
                             ])
-                            archiveArtifacts artifacts: 'target/pmd.xml', allowEmptyArchive: true
+                            // Publish PMD HTML report
+                            publishHTML([
+                                reportDir: 'target/pmd',
+                                reportFiles: 'pmd.html',
+                                reportName: 'PMD Report',
+                                allowMissing: true,
+                                keepAll: true
+                            ])
+                            // Archive PMD artifacts
+                            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
                         }
                     }
                 }
@@ -99,13 +109,33 @@ pipeline {
             steps {
                 echo 'Checking Quality Gate: 99% coverage required...'
                 script {
+                    // Wait for JaCoCo report to be generated
+                    sleep(time: 2, unit: 'SECONDS')
+                    
                     // Read JaCoCo XML report
-                    def jacocoReport = readFile('target/site/jacoco/jacoco.xml')
+                    def jacocoReportFile = 'target/site/jacoco/jacoco.xml'
+                    if (!fileExists(jacocoReportFile)) {
+                        error("❌ JaCoCo report not found at ${jacocoReportFile}. Please check if tests ran successfully.")
+                    }
+                    
+                    def jacocoReport = readFile(jacocoReportFile)
                     def parser = new XmlSlurper().parseText(jacocoReport)
                     
-                    // Calculate coverage from JaCoCo XML
-                    def counter = parser.counter.find { 
-                        it.@type == 'LINE' && it.@missed != null && it.@covered != null
+                    // Calculate coverage from JaCoCo XML - use BUNDLE level
+                    def report = parser.report
+                    def counter = report.counter.find { 
+                        it.@type == 'LINE'
+                    }
+                    
+                    if (counter == null) {
+                        // Try alternative path
+                        counter = parser.counter.find { 
+                            it.@type == 'LINE'
+                        }
+                    }
+                    
+                    if (counter == null) {
+                        error("❌ Could not find LINE counter in JaCoCo report")
                     }
                     
                     def missed = (counter.@missed.text().toInteger())
@@ -126,6 +156,9 @@ pipeline {
                     
                     // Set environment variable for other pipelines
                     env.COVERAGE_PERCENTAGE = String.format("%.2f", coverage)
+                    env.COVERAGE_COVERED = "${covered}"
+                    env.COVERAGE_MISSED = "${missed}"
+                    env.COVERAGE_TOTAL = "${total}"
                     
                     if (coverage < 99.0) {
                         currentBuild.result = 'UNSTABLE'
@@ -142,10 +175,33 @@ pipeline {
     post {
         always {
             echo 'Post-Build: Archiving artifacts and reports...'
+            
+            // Archive JAR
             archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
-            archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
+            
+            // Archive JaCoCo reports
+            archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
+            
+            // Archive JUnit reports
             archiveArtifacts artifacts: 'target/surefire-reports/**/*', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'target/pmd.xml', allowEmptyArchive: true
+            
+            // Archive PMD reports
+            archiveArtifacts artifacts: 'target/pmd/**/*', allowEmptyArchive: true
+            
+            // Archive all site reports
+            archiveArtifacts artifacts: 'target/site/**/*', allowEmptyArchive: true
+            
+            // Publish summary
+            script {
+                echo "========================================="
+                echo "POST-BUILD SUMMARY"
+                echo "========================================="
+                echo "Coverage: ${env.COVERAGE_PERCENTAGE ?: 'N/A'}%"
+                echo "Lines Covered: ${env.COVERAGE_COVERED ?: 'N/A'}"
+                echo "Lines Missed: ${env.COVERAGE_MISSED ?: 'N/A'}"
+                echo "Total Lines: ${env.COVERAGE_TOTAL ?: 'N/A'}"
+                echo "========================================="
+            }
         }
         success {
             echo '✅ Pipeline-test-dev completed successfully!'

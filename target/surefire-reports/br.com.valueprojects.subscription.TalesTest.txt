@@ -1,24 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: br.com.valueprojects.subscription.TalesTest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.007 s <<< FAILURE! -- in br.com.valueprojects.subscription.TalesTest
-br.com.valueprojects.subscription.TalesTest.gainThreeCreditsWhenAvgBetweenSevenAndNine -- Time elapsed: 0.002 s <<< ERROR!
-java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/entity/Student$StudentBuilder
-	at br.com.valueprojects.subscription.entity.Student.builder(Student.java:13)
-	at br.com.valueprojects.subscription.TalesTest.gainThreeCreditsWhenAvgBetweenSevenAndNine(TalesTest.java:27)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.entity.Student$StudentBuilder
-	... 5 more
-
-br.com.valueprojects.subscription.TalesTest.gainFiveCreditsWhenAvgAtLeastNine -- Time elapsed: 0.002 s <<< ERROR!
-java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/entity/Student$StudentBuilder
-	at br.com.valueprojects.subscription.entity.Student.builder(Student.java:13)
-	at br.com.valueprojects.subscription.TalesTest.gainFiveCreditsWhenAvgAtLeastNine(TalesTest.java:11)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.entity.Student$StudentBuilder
-	... 5 more
-
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in br.com.valueprojects.subscription.TalesTest

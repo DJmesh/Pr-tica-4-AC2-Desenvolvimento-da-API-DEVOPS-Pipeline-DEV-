@@ -47,6 +47,10 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
 
     <!-- Lombok -->
     <dependency>
@@ -228,6 +232,7 @@
         <version>${pmd.version}</version>
         <executions>
           <execution>
+            <id>pmd-check</id>
             <phase>verify</phase>
             <goals>
               <goal>check</goal>
@@ -239,6 +244,15 @@
             <ruleset>/rulesets/java/quickstart.xml</ruleset>
           </rulesets>
           <targetJdk>17</targetJdk>
+          <outputDirectory>${project.build.directory}/pmd</outputDirectory>
+          <format>xml</format>
+          <linkXRef>true</linkXRef>
+          <sourceEncoding>UTF-8</sourceEncoding>
+          <minimumTokens>100</minimumTokens>
+          <excludeRoots>
+            <excludeRoot>target/generated-sources</excludeRoot>
+            <excludeRoot>target/generated-test-sources</excludeRoot>
+          </excludeRoots>
         </configuration>
       </plugin>
     </plugins>

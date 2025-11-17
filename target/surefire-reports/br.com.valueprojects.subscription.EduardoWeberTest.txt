@@ -1,14 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: br.com.valueprojects.subscription.EduardoWeberTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.006 s <<< FAILURE! -- in br.com.valueprojects.subscription.EduardoWeberTest
-br.com.valueprojects.subscription.EduardoWeberTest.convertCoinsRateTwoToOne -- Time elapsed: 0.004 s <<< ERROR!
-java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/entity/Student$StudentBuilder
-	at br.com.valueprojects.subscription.entity.Student.builder(Student.java:13)
-	at br.com.valueprojects.subscription.EduardoWeberTest.convertCoinsRateTwoToOne(EduardoWeberTest.java:11)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.entity.Student$StudentBuilder
-	... 5 more
-
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in br.com.valueprojects.subscription.EduardoWeberTest

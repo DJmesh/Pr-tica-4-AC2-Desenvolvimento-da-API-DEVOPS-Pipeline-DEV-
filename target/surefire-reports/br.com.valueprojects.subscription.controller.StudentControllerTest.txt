@@ -1,16 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: br.com.valueprojects.subscription.controller.StudentControllerTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.001 s <<< FAILURE! -- in br.com.valueprojects.subscription.controller.StudentControllerTest
-br.com.valueprojects.subscription.controller.StudentControllerTest -- Time elapsed: 0.001 s <<< ERROR!
-java.lang.NoClassDefFoundError: br/com/valueprojects/subscription/service/StudentService
-	at java.base/java.lang.Class.getDeclaredFields0(Native Method)
-	at java.base/java.lang.Class.privateGetDeclaredFields(Class.java:3297)
-	at java.base/java.lang.Class.getDeclaredFields(Class.java:2371)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-Caused by: java.lang.ClassNotFoundException: br.com.valueprojects.subscription.service.StudentService
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
-	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:525)
-	... 4 more
-
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.241 s -- in br.com.valueprojects.subscription.controller.StudentControllerTest

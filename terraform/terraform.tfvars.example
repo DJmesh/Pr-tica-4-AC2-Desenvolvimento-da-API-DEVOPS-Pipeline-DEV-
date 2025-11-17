@@ -1,0 +1,15 @@
+# Exemplo de arquivo de variáveis Terraform
+# Copie este arquivo para terraform.tfvars e preencha com seus valores
+
+jenkins_url       = "http://localhost:8081"
+jenkins_username  = "eduardo"
+jenkins_password  = "seu-api-token-aqui"  # Use API Token, não a senha
+
+# URL do seu repositório Git
+git_repository_url = "https://github.com/seu-usuario/seu-repositorio.git"
+git_branch         = "main"
+
+# Nomes das ferramentas configuradas no Jenkins
+maven_tool_name = "Maven"
+jdk_tool_name   = "JDK17"
+

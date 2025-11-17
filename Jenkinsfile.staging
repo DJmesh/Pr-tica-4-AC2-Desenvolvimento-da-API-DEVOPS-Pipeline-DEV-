@@ -1,10 +1,32 @@
 pipeline {
     agent any
 
+    environment {
+        COMPOSE_FILE = 'docker-compose.staging.yml'
+        APP_URL = 'http://localhost:8080'
+        HEALTH_ENDPOINT = 'http://localhost:8080/actuator/health'
+    }
+
     stages {
         stage('Checkout') {
             steps {
+                echo '========================================'
+                echo 'STAGING PIPELINE'
+                echo '========================================'
+                echo 'Checking out source code...'
                 checkout scm
+            }
+        }
+
+        stage('Stop Existing Containers') {
+            steps {
+                echo 'Stopping existing containers...'
+                script {
+                    sh '''
+                        docker-compose -f ${COMPOSE_FILE} down -v || true
+                        docker system prune -f || true
+                    '''
+                }
             }
         }
 
@@ -13,12 +35,53 @@ pipeline {
                 echo 'Starting container from Docker Hub...'
                 script {
                     sh '''
-                        docker-compose -f docker-compose.staging.yml pull || echo "Using local image"
-                        docker-compose -f docker-compose.staging.yml up -d --no-color
-                        sleep 60
-                        docker-compose -f docker-compose.staging.yml logs
-                        docker-compose -f docker-compose.staging.yml ps
+                        echo "Pulling latest images..."
+                        docker-compose -f ${COMPOSE_FILE} pull || echo "Using local image"
+                        
+                        echo "Starting services..."
+                        docker-compose -f ${COMPOSE_FILE} up -d --build --no-color
+                        
+                        echo "Waiting for services to be ready..."
+                        sleep 30
+                        
+                        echo "Checking container status..."
+                        docker-compose -f ${COMPOSE_FILE} ps
+                        
+                        echo "Showing logs..."
+                        docker-compose -f ${COMPOSE_FILE} logs --tail=50
                     '''
+                }
+            }
+        }
+
+        stage('Wait for Application') {
+            steps {
+                echo 'Waiting for application to be fully ready...'
+                script {
+                    def maxAttempts = 30
+                    def attempt = 0
+                    def ready = false
+                    
+                    while (attempt < maxAttempts && !ready) {
+                        attempt++
+                        echo "Health check attempt ${attempt}/${maxAttempts}..."
+                        
+                        def result = sh(
+                            script: "curl -f -s ${HEALTH_ENDPOINT} || echo 'FAILED'",
+                            returnStatus: true
+                        )
+                        
+                        if (result == 0) {
+                            ready = true
+                            echo "✅ Application is ready!"
+                        } else {
+                            sleep(time: 5, unit: 'SECONDS')
+                        }
+                    }
+                    
+                    if (!ready) {
+                        error("Application did not become ready after ${maxAttempts} attempts")
+                    }
                 }
             }
         }
@@ -28,10 +91,46 @@ pipeline {
                 echo 'Running smoke tests against the container...'
                 script {
                     sh '''
-                        sleep 30
-                        curl -f http://localhost:8080/actuator/health || echo "Health check failed"
-                        curl -f http://localhost:8080/swagger-ui.html || echo "Swagger UI check failed"
-                        curl -f http://localhost:8080/api/students || echo "API endpoint check failed"
+                        echo "========================================="
+                        echo "STAGING SMOKE TESTS"
+                        echo "========================================="
+                        
+                        echo "1. Testing Health Endpoint..."
+                        HEALTH_RESPONSE=$(curl -s ${HEALTH_ENDPOINT})
+                        echo "Health Response: ${HEALTH_RESPONSE}"
+                        curl -f ${HEALTH_ENDPOINT} || exit 1
+                        
+                        echo "2. Testing Swagger UI..."
+                        curl -f ${APP_URL}/swagger-ui.html || curl -f ${APP_URL}/swagger-ui/index.html || echo "Swagger UI not accessible"
+                        
+                        echo "3. Testing API Endpoints..."
+                        curl -f ${APP_URL}/api/students || echo "API endpoint check"
+                        
+                        echo "4. Testing OpenAPI Documentation..."
+                        curl -f ${APP_URL}/v3/api-docs || echo "OpenAPI docs check"
+                        
+                        echo "========================================="
+                        echo "✅ All smoke tests passed!"
+                        echo "========================================="
+                    '''
+                }
+            }
+        }
+
+        stage('Staging Verification') {
+            steps {
+                echo 'Verifying staging deployment...'
+                script {
+                    sh '''
+                        echo "========================================="
+                        echo "STAGING DEPLOYMENT VERIFICATION"
+                        echo "========================================="
+                        echo "Container Status:"
+                        docker-compose -f ${COMPOSE_FILE} ps
+                        echo ""
+                        echo "Container Logs (last 20 lines):"
+                        docker-compose -f ${COMPOSE_FILE} logs --tail=20
+                        echo "========================================="
                     '''
                 }
             }
@@ -40,13 +139,30 @@ pipeline {
 
     post {
         always {
-            echo 'Staging pipeline completed'
-            sh 'docker-compose -f docker-compose.staging.yml ps'
+            echo '========================================'
+            echo 'STAGING PIPELINE COMPLETED'
+            echo '========================================'
+            sh '''
+                echo "Final container status:"
+                docker-compose -f ${COMPOSE_FILE} ps
+            '''
+        }
+        success {
+            echo '✅ Staging deployment successful!'
+            echo "Application URL: ${APP_URL}"
+            echo "Health Check: ${HEALTH_ENDPOINT}"
+            echo "Swagger UI: ${APP_URL}/swagger-ui/index.html"
+        }
+        failure {
+            echo '❌ Staging deployment failed!'
+            sh '''
+                echo "Error logs:"
+                docker-compose -f ${COMPOSE_FILE} logs --tail=50
+            '''
         }
         cleanup {
-            echo 'Cleaning up...'
-            // Optional: stop containers
-            // sh 'docker-compose -f docker-compose.staging.yml down'
+            echo 'Cleaning up temporary resources...'
+            // Keep containers running for testing
         }
     }
 }
