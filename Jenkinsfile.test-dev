@@ -65,11 +65,11 @@ pipeline {
         stage('Quality Gate (Jacoco >= 99%)') {
             steps {
                 echo '''
-Se o mvn verify chegou até aqui, significa que:
- - Todos os testes passaram
- - A regra do Jacoco (coverage >= 99%) foi atendida
-Caso contrário, o build teria falhado na stage anterior.
-'''
+                Se o mvn verify chegou até aqui, significa que:
+                - Todos os testes passaram
+                - A regra do Jacoco (coverage >= 99%) foi atendida
+                Caso contrário, o build teria falhado na stage anterior.
+                '''
             }
         }
 
