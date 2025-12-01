@@ -8,148 +8,94 @@ pipeline {
 
     environment {
         APP_NAME            = 'subscription-service'
-        DOCKER_IMAGE        = "${APP_NAME}:latest"
+        DOCKER_IMAGE        = 'subscription-service:latest'
         DOCKER_COMPOSE_FILE = 'docker-compose.staging.yml'
-    }
-
-    options {
-        timestamps()
-        disableConcurrentBuilds()
-        ansiColor('xterm')
     }
 
     stages {
         stage('Checkout') {
             steps {
                 echo '========================================'
-                echo 'PIPELINE UNIFICADO: DEV + IMAGE_DOCKER + STAGING'
+                echo 'PIPELINE UNIFICADO: DEV + DOCKER IMAGE + STAGING'
                 echo '========================================'
-                echo 'Fazendo checkout do código-fonte...'
                 checkout scm
             }
         }
 
-        stage('Build & Test (DEV)') {
+        stage('Build & Tests (DEV)') {
             steps {
-                echo 'Rodando testes unitários, BDD, PMD e Jacoco (mínimo 99%)...'
+                echo 'Rodando mvn clean verify (testes, Jacoco, PMD, BDD)...'
                 sh 'mvn -B clean verify'
             }
         }
 
         stage('Package Jar') {
             steps {
-                echo 'Gerando artefato JAR para a aplicação Spring Boot...'
+                echo 'Gerando artefato .jar para a aplicação...'
                 sh 'mvn -B clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Construindo imagem Docker da aplicação...'
-                sh '''
-                    if command -v docker >/dev/null 2>&1; then
-                      echo "Construindo imagem ${DOCKER_IMAGE}..."
-                      docker build -t ${DOCKER_IMAGE} .
-                    else
-                      echo "Docker não encontrado. Simulando build da imagem (ambiente acadêmico)."
-                    fi
-                '''
+                script {
+                    echo 'Construindo imagem Docker de aplicação...'
+                    if (sh(returnStatus: true, script: 'command -v docker') == 0) {
+                        sh 'docker build -t subscription-service:latest .'
+                    } else {
+                        echo 'Docker não encontrado neste agente. Simulando etapa de build de imagem.'
+                    }
+                }
             }
         }
 
-        stage('Smoke Test Docker Image') {
+        stage('Deploy STAGING (docker-compose)') {
             steps {
-                echo 'Subindo container temporário para smoke test em /actuator/health...'
-                sh '''
-                    if command -v docker >/dev/null 2>&1; then
-                      echo "Subindo container de teste..."
-                      docker rm -f ${APP_NAME}-smoke || true
-                      docker run --rm -d --name ${APP_NAME}-smoke -p 8080:8080 ${DOCKER_IMAGE}
-                      echo "Aguardando aplicação subir..."
-                      sleep 20
-                      if command -v curl >/dev/null 2>&1; then
-                        if curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1; then
-                          echo "Smoke test local OK."
-                        else
-                          echo "Smoke test falhou, mas NÃO vamos falhar o pipeline em ambiente acadêmico."
-                        fi
-                      else
-                        echo "curl não encontrado. Pulando verificação HTTP."
-                      fi
-                      echo "Encerrando container de smoke test..."
-                      docker rm -f ${APP_NAME}-smoke || true
-                    else
-                      echo "Docker não encontrado. Smoke test apenas conceitual."
-                    fi
-                '''
+                script {
+                    echo 'Realizando deploy em ambiente STAGING com docker-compose...'
+                    if (sh(returnStatus: true, script: 'command -v docker-compose') == 0) {
+                        sh 'docker-compose -f docker-compose.staging.yml down || true'
+                        sh 'docker-compose -f docker-compose.staging.yml up -d --build'
+                    } else {
+                        echo 'docker-compose não encontrado neste agente. Simulando deploy de STAGING.'
+                    }
+                }
             }
         }
 
-        stage('Push Image (Simulado)') {
+        stage('Smoke Test STAGING') {
             steps {
-                echo 'Aqui entraria o push real para um registry (Docker Hub, ECR, etc.).'
-                echo 'Para a AF, estamos apenas documentando esta etapa como parte do fluxo DevOps.'
-            }
-        }
+                script {
+                    echo 'Executando smoke test em http://localhost:8080/actuator/health ...'
+                    int maxAttempts = 10
+                    int delaySeconds = 15
+                    boolean success = false
 
-        stage('Deploy STAGING') {
-            steps {
-                echo 'Realizando deploy em ambiente STAGING usando docker-compose...'
-                sh '''
-                    if command -v docker-compose >/dev/null 2>&1; then
-                      echo "Parando containers antigos de STAGING (se existirem)..."
-                      docker-compose -f ${DOCKER_COMPOSE_FILE} down || true
-                      echo "Subindo novo ambiente STAGING..."
-                      docker-compose -f ${DOCKER_COMPOSE_FILE} up -d --build
-                    else
-                      echo "docker-compose não encontrado. Simulando deploy de STAGING (ambiente acadêmico)."
-                    fi
-                '''
-            }
-        }
+                    for (int i = 1; i <= maxAttempts; i++) {
+                        echo "Tentativa ${i} de ${maxAttempts}..."
+                        int status = sh(returnStatus: true, script: "curl -f http://localhost:8080/actuator/health || echo 'fail'")
+                        if (status == 0) {
+                            echo 'Aplicação no STAGING respondeu com sucesso ao health check.'
+                            success = true
+                            break
+                        }
+                        sleep time: delaySeconds, unit: 'SECONDS'
+                    }
 
-        stage('Wait for STAGING & Smoke Test') {
-            steps {
-                echo 'Aguardando aplicação em STAGING responder em /actuator/health...'
-                sh '''
-                    if command -v docker-compose >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
-                      echo "Verificando saúde da aplicação em http://localhost:8081/actuator/health ..."
-                      for i in $(seq 1 10); do
-                        if curl -sf http://localhost:8081/actuator/health >/dev/null 2>&1; then
-                          echo "Aplicação STAGING no ar."
-                          exit 0
-                        fi
-                        echo "Tentativa $i/10... aguardando 5s"
-                        sleep 5
-                      done
-                      echo "Aplicação não respondeu dentro do tempo. Continuando para fins acadêmicos."
-                    else
-                      echo "docker-compose ou curl não encontrados. Pulando verificação real de STAGING."
-                    fi
-                '''
+                    if (!success) {
+                        error 'Smoke test em STAGING falhou após várias tentativas.'
+                    }
+                }
             }
         }
     }
 
     post {
-        always {
-            echo '========================================'
-            echo 'PIPELINE UNIFICADO FINALIZADO (DEV + IMAGE_DOCKER + STAGING)'
-            echo '========================================'
-            sh '''
-              if command -v docker-compose >/dev/null 2>&1; then
-                echo "Status atual dos containers (docker-compose ps):"
-                docker-compose -f ${DOCKER_COMPOSE_FILE} ps || true
-              else
-                echo "docker-compose não encontrado. Finalizando apenas com logs."
-              fi
-            '''
-        }
         success {
-            echo '✅ Pipeline unificado concluído com SUCESSO.'
+            echo 'PIPELINE UNIFICADO FINALIZADO COM SUCESSO.'
         }
         failure {
-            echo '❌ Pipeline unificado FALHOU. Verifique os logs das stages DEV, IMAGE_DOCKER ou STAGING.'
+            echo 'PIPELINE UNIFICADO FALHOU. Verificar logs das stages.'
         }
     }
 }
